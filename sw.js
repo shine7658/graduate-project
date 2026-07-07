@@ -1,0 +1,32 @@
+{
+  "name": "手影小任務・早療手勢練習",
+  "short_name": "手影小任務",
+  "description": "結合手指操、影子遊戲與AI手勢辨識的早療手勢練習App",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0D1424",
+  "theme_color": "#0D1424",
+  "lang": "zh-Hant-TW",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>手影小任務｜早療手勢練習</title>
+
+<!-- PWA basics -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0D1424">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="手影小任務">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" href="icons/icon-192.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy-deep:#0D1424;
+    --navy-mid:#182140;
+    --navy-card:#1E2A4D;
+    --gold-glow:#F5A93F;
+    --gold-soft:#FFD98E;
+    --cream:#FDF6E8;
+    --coral:#FF7A66;
+    --mint:#6FD9B8;
+    --dim:#8996BE;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{
+    height:100%;
+    background:radial-gradient(ellipse at 50% -10%, #223061 0%, var(--navy-deep) 55%);
+    color:var(--cream);
+    font-family:'Noto Sans TC', sans-serif;
+    overflow:hidden;
+  }
+  #stars{position:fixed; inset:0; z-index:0; pointer-events:none;}
+  #app{ position:relative; z-index:1; height:100vh; width:100vw; }
+  .screen{
+    display:none;
+    width:100%; height:100%;
+    flex-direction:column; align-items:center; justify-content:center;
+    padding:32px 20px;
+    position:absolute; inset:0;
+  }
+  .screen.active{ display:flex; animation:fadeUp .45s ease; }
+  @keyframes fadeUp{ from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:translateY(0);} }
+
+  .eyebrow{
+    font-family:'Fredoka', sans-serif;
+    font-weight:600; letter-spacing:.16em; text-transform:uppercase;
+    font-size:12px; color:var(--gold-soft); margin-bottom:8px;
+  }
+  h1.title{
+    font-size:clamp(28px,7vw,44px); font-weight:900; line-height:1.2; text-align:center;
+    text-shadow:0 0 40px rgba(245,169,63,.35);
+  }
+  .accent{ color:var(--gold-glow); }
+  p.lead{ max-width:440px; text-align:center; color:var(--dim); font-size:14px; line-height:1.8; margin-top:10px; }
+
+  .torch{ width:110px; height:110px; margin-bottom:14px; position:relative; }
+  .torch .beam{
+    position:absolute; inset:0; border-radius:50%;
+    background:radial-gradient(circle, rgba(245,169,63,.55) 0%, rgba(245,169,63,0) 70%);
+    animation:pulseBeam 2.6s ease-in-out infinite;
+  }
+  @keyframes pulseBeam{ 0%,100%{ transform:scale(1); opacity:.7;} 50%{ transform:scale(1.15); opacity:1;} }
+  .torch .glyph{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:52px; filter:drop-shadow(0 0 18px rgba(245,169,63,.7));
+  }
+
+  button{ font-family:'Fredoka','Noto Sans TC',sans-serif; cursor:pointer; border:none; outline:none; }
+  .btn-primary{
+    margin-top:22px;
+    background:linear-gradient(135deg, var(--gold-glow), #E88A2A);
+    color:#221200; font-weight:700; font-size:18px;
+    padding:18px 46px; border-radius:999px;
+    box-shadow:0 8px 24px rgba(245,169,63,.35);
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .btn-primary:hover{ transform:translateY(-2px); box-shadow:0 12px 28px rgba(245,169,63,.45); }
+  .btn-primary:active{ transform:translateY(0); }
+  .btn-secondary{
+    margin-top:12px; background:rgba(255,255,255,.08); color:var(--cream);
+    font-weight:600; font-size:14px; padding:12px 26px; border-radius:999px;
+  }
+  .btn-ghost{ margin-top:12px; background:transparent; color:var(--dim); font-size:12px; text-decoration:underline; text-underline-offset:4px; }
+
+  .corner-link{
+    position:fixed; bottom:16px; right:18px; z-index:20;
+    font-size:11px; color:rgba(137,150,190,.7); background:rgba(255,255,255,.05);
+    padding:7px 12px; border-radius:999px; text-decoration:none; display:flex; gap:6px; align-items:center;
+  }
+  .sound-toggle{
+    position:fixed; top:16px; right:18px; z-index:20;
+    width:38px; height:38px; border-radius:50%;
+    background:rgba(255,255,255,.07); color:var(--cream); font-size:16px;
+    display:flex; align-items:center; justify-content:center;
+  }
+
+  /* progress dots */
+  .progress-dots{ display:flex; gap:8px; margin-bottom:20px; }
+  .progress-dots span{
+    width:9px; height:9px; border-radius:50%; background:rgba(255,255,255,.15);
+    transition:background .2s ease, transform .2s ease;
+  }
+  .progress-dots span.done{ background:var(--gold-glow); }
+  .progress-dots span.partial{ background:rgba(245,169,63,.45); }
+  .progress-dots span.current{ background:var(--gold-soft); transform:scale(1.3); }
+
+  .level-badge{
+    font-family:'Fredoka', sans-serif; font-size:11px; font-weight:600; letter-spacing:.06em;
+    color:var(--navy-deep); background:var(--gold-soft); padding:4px 12px; border-radius:999px;
+    margin-top:4px;
+  }
+  .level-stars{ font-size:14px; letter-spacing:2px; margin-top:2px; }
+
+  /* ---- demo screen ---- */
+  #screen-demo .demo-card{
+    background:var(--navy-card); border-radius:26px; padding:30px 26px;
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+    width:min(90vw,360px);
+    border:1px solid rgba(255,255,255,.06);
+  }
+  .demo-glyph-wrap{
+    width:140px; height:140px; border-radius:50%;
+    background:radial-gradient(circle, rgba(245,169,63,.28), rgba(245,169,63,0) 72%);
+    display:flex; align-items:center; justify-content:center;
+    margin-bottom:6px;
+  }
+  .demo-glyph{ font-size:78px; display:inline-block; animation:demoWiggle 1.8s ease-in-out infinite; }
+  @keyframes demoWiggle{
+    0%,100%{ transform:rotate(-8deg) scale(1); }
+    50%{ transform:rotate(8deg) scale(1.08); }
+  }
+  #screen-demo h2{ font-size:20px; font-weight:900; text-align:center; margin-top:6px; }
+  #screen-demo .demo-hint{ font-size:13px; color:var(--dim); text-align:center; margin-top:6px; line-height:1.7; }
+  .demo-actions{ display:flex; flex-direction:column; align-items:center; margin-top:6px; }
+  .replay-btn{
+    display:flex; align-items:center; gap:6px; font-size:12px; color:var(--gold-soft);
+    background:rgba(245,169,63,.12); padding:8px 16px; border-radius:999px; margin-top:14px;
+  }
+
+  /* ---- mission grid (parent panel) ---- */
+  .mission-grid{ display:grid; grid-template-columns:repeat(3, minmax(90px,110px)); gap:12px; max-width:400px; }
+  .mission-card{
+    background:var(--navy-card); border:1px solid rgba(255,255,255,.06); border-radius:16px;
+    padding:12px 6px 10px; display:flex; flex-direction:column; align-items:center; gap:4px;
+    position:relative;
+  }
+  .mission-card .glyph{ font-size:28px; filter:brightness(0) invert(1); opacity:.9; }
+  .mission-card.done .glyph{ filter:none; opacity:1; }
+  .mission-card .m-name{ font-size:11px; font-weight:700; text-align:center; line-height:1.35; }
+  .mission-card .star{ position:absolute; top:5px; right:7px; font-size:12px; opacity:.25; }
+  .mission-card.done .star{ opacity:1; }
+  .mission-card .ot-tag{ font-size:8.5px; color:var(--dim); text-align:center; }
+
+  /* ---- parent panel ---- */
+  #screen-parent{ overflow-y:auto; align-items:stretch; padding-top:40px; padding-bottom:40px; }
+  .parent-wrap{ max-width:440px; margin:0 auto; width:100%; }
+  .parent-tip-box{
+    background:rgba(111,217,184,.1); border:1px solid rgba(111,217,184,.3);
+    border-radius:16px; padding:16px 18px; font-size:13px; line-height:1.8; color:var(--cream);
+    margin-bottom:20px;
+  }
+  .parent-tip-box b{ color:var(--mint); }
+  .parent-section-title{ font-size:13px; font-weight:700; color:var(--gold-soft); margin:18px 0 10px; }
+  .log-list{ font-size:12.5px; color:var(--dim); line-height:2; }
+  .log-list .ok{ color:var(--mint); }
+  .prompt-hint-list{ font-size:12px; color:var(--dim); line-height:1.9; }
+  .prompt-hint-list li{ margin-bottom:6px; }
+
+  /* ---- play screen ---- */
+  #screen-play{ padding:0; }
+  .stage-wrap{
+    position:relative; width:min(94vw, 480px); aspect-ratio:3/4; border-radius:26px; overflow:hidden;
+    background:#000; box-shadow:0 0 0 1px rgba(255,255,255,.06), 0 20px 60px rgba(0,0,0,.5);
+  }
+  #cam-canvas{ width:100%; height:100%; display:block; transform:scaleX(-1); }
+  video{ display:none; }
+
+  .play-topbar{
+    position:absolute; top:0; left:0; right:0; display:flex; align-items:center; justify-content:space-between;
+    padding:14px 16px; z-index:3;
+  }
+  .icon-btn{
+    width:36px; height:36px; border-radius:50%; background:rgba(13,20,36,.6); backdrop-filter:blur(6px);
+    color:var(--cream); display:flex; align-items:center; justify-content:center; font-size:16px;
+  }
+  .target-pill{
+    background:rgba(13,20,36,.65); backdrop-filter:blur(6px); border-radius:999px; padding:8px 16px;
+    display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700;
+  }
+  .target-pill .glyph{ font-size:18px; }
+
+  .status-banner{
+    position:absolute; bottom:0; left:0; right:0; z-index:3; padding:16px 18px 20px;
+    background:linear-gradient(to top, rgba(13,20,36,.9), rgba(13,20,36,0)); text-align:center;
+  }
+  .status-banner .msg{ font-size:14px; font-weight:700; color:var(--gold-soft); min-height:20px; }
+  .hold-ring-wrap{ display:flex; justify-content:center; margin-top:10px; }
+  svg.hold-ring{ width:44px; height:44px; }
+  svg.hold-ring circle.bg{ stroke:rgba(255,255,255,.15); }
+  svg.hold-ring circle.fg{ stroke:var(--gold-glow); stroke-linecap:round; transition:stroke-dashoffset .08s linear; }
+
+  .hint-banner{
+    position:absolute; top:64px; left:14px; right:14px; z-index:4;
+    background:rgba(255,122,102,.14); border:1px solid rgba(255,122,102,.4);
+    border-radius:14px; padding:12px 14px; font-size:12px; line-height:1.7; color:var(--cream);
+    display:none; text-align:center;
+  }
+  .hint-banner.show{ display:block; animation:fadeUp .3s ease; }
+  .hint-banner button{
+    margin-top:8px; background:rgba(255,255,255,.12); color:var(--cream); font-size:11px;
+    padding:6px 14px; border-radius:999px;
+  }
+
+  .loading-overlay{
+    position:absolute; inset:0; z-index:5; background:var(--navy-deep);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; text-align:center; padding:24px;
+  }
+  .loading-overlay.hidden{ display:none; }
+  .spinner{
+    width:34px; height:34px; border-radius:50%; border:3px solid rgba(245,169,63,.25);
+    border-top-color:var(--gold-glow); animation:spin 1s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .loading-overlay .small{ font-size:12px; color:var(--dim); max-width:280px; }
+  .loading-overlay .err{ color:var(--coral); font-size:13px; font-weight:700; }
+
+  /* ---- success / complete screen ---- */
+  #screen-success .torch .glyph, #screen-complete .torch .glyph{ font-size:60px; }
+  .star-count{ font-family:'Fredoka', sans-serif; font-size:14px; color:var(--gold-soft); margin-top:6px; font-weight:600; }
+  .burst-layer{ position:absolute; inset:0; pointer-events:none; overflow:hidden; }
+  .burst-particle{
+    position:absolute; left:50%; top:38%; font-size:22px; opacity:0;
+    animation:burstFloat 1.1s ease-out forwards;
+  }
+  @keyframes burstFloat{
+    0%{ opacity:0; transform:translate(-50%,-50%) scale(.4) rotate(0deg); }
+    15%{ opacity:1; }
+    100%{ opacity:0; transform:translate(calc(-50% + var(--bx)), calc(-50% + var(--by))) scale(1.1) rotate(var(--br)); }
+  }
+
+  .footer-note{
+    position:fixed; bottom:10px; left:0; right:0; text-align:center; font-size:10px;
+    color:rgba(137,150,190,.5); z-index:1; pointer-events:none;
+  }
+</style>
+</head>
+<body>
+<canvas id="stars"></canvas>
+<button class="sound-toggle" id="sound-toggle">🔊</button>
+
+<div id="app">
+
+  <!-- START -->
+  <section id="screen-start" class="screen active">
+    <div class="torch"><div class="beam"></div><div class="glyph">🔦</div></div>
+    <div class="eyebrow">手影小任務・早療版</div>
+    <h1 class="title">跟著<span class="accent">手影</span>學手勢</h1>
+    <p class="lead">先看示範，再照著鏡子模仿。一次只練一個手勢，做到就有星星鼓勵！</p>
+    <button class="btn-primary" id="btn-enter">開始</button>
+  </section>
+
+  <!-- DEMO -->
+  <section id="screen-demo" class="screen">
+    <div class="progress-dots" id="demo-dots"></div>
+    <div class="demo-card">
+      <div class="demo-glyph-wrap"><span class="demo-glyph" id="demo-glyph">🖐️</span></div>
+      <div class="level-badge" id="demo-level-badge">Lv.1 入門</div>
+      <h2 id="demo-name">招手掰掰</h2>
+      <div class="level-stars" id="demo-level-stars">⭐☆☆</div>
+      <p class="demo-hint" id="demo-hint">看我，可以這樣做手勢喔</p>
+      <div class="demo-actions">
+        <button class="btn-primary" id="btn-my-turn">換我試試看</button>
+        <button class="replay-btn" id="btn-replay">🔁 再看一次</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- PLAY -->
+  <section id="screen-play" class="screen">
+    <div class="stage-wrap">
+      <video id="video" autoplay playsinline muted></video>
+      <canvas id="cam-canvas"></canvas>
+
+      <div class="play-topbar">
+        <button class="icon-btn" id="btn-exit-play">✕</button>
+        <div class="target-pill"><span class="glyph" id="target-glyph">🖐️</span><span id="target-name">目標手勢</span></div>
+        <button class="icon-btn" id="btn-see-demo-again">👀</button>
+      </div>
+
+      <div class="hint-banner" id="hint-banner">
+        <span id="hint-text">請家長輕輕引導孩子的手，一起完成手勢吧</span>
+        <br>
+        <button id="hint-back-demo">再看一次示範</button>
+      </div>
+
+      <div class="status-banner">
+        <div class="msg" id="play-msg">把手放進畫面裡，跟著做做看</div>
+        <div class="hold-ring-wrap">
+          <svg class="hold-ring" viewBox="0 0 44 44">
+            <circle class="bg" cx="22" cy="22" r="18" fill="none" stroke-width="4"/>
+            <circle class="fg" id="hold-ring-fg" cx="22" cy="22" r="18" fill="none" stroke-width="4"
+              stroke-dasharray="113" stroke-dashoffset="113" transform="rotate(-90 22 22)"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="loading-overlay" id="loading-overlay">
+        <div class="spinner" id="loading-spinner"></div>
+        <div class="eyebrow" style="margin-bottom:0">準備中</div>
+        <div class="small" id="loading-text">正在開啟鏡頭與載入手勢辨識模型，第一次載入約需幾秒鐘…</div>
+        <button class="btn-primary" id="btn-retry" style="display:none">再試一次</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SUCCESS -->
+  <section id="screen-success" class="screen">
+    <div class="burst-layer" id="burst-layer"></div>
+    <div class="torch"><div class="beam"></div><div class="glyph" id="success-glyph">🐘</div></div>
+    <div class="eyebrow">做到了</div>
+    <h1 class="title" id="success-title">手影變出來了！</h1>
+    <p class="lead" id="success-lead">你成功擺出了這個手勢，太棒了！</p>
+    <div class="star-count" id="success-star-count">⭐ 總星數 1 / 18</div>
+    <button class="btn-primary" id="btn-level-up">挑戰 Lv.2 熟練</button>
+    <button class="btn-secondary" id="btn-next-mission">下一個手勢</button>
+  </section>
+
+  <!-- COMPLETE -->
+  <section id="screen-complete" class="screen">
+    <div class="burst-layer" id="burst-layer-2"></div>
+    <div class="torch"><div class="beam"></div><div class="glyph">🌟</div></div>
+    <div class="eyebrow">全部完成</div>
+    <h1 class="title">六個手勢都學會了！</h1>
+    <p class="lead">今天練習得很棒，休息一下，下次可以再複習一次。</p>
+    <button class="btn-primary" id="btn-restart">重新開始</button>
+    <button class="btn-ghost" id="btn-complete-to-parent">查看家長紀錄</button>
+  </section>
+
+  <!-- PARENT PANEL -->
+  <section id="screen-parent" class="screen">
+    <div class="parent-wrap">
+      <div class="eyebrow">家長／治療師模式</div>
+      <h2 style="font-size:20px;font-weight:900;margin-bottom:14px;">陪同引導小提醒</h2>
+      <div class="parent-tip-box">
+        <b>手把手引導：</b>孩子若做不出手勢，可輕握孩子的手腕或手掌，帶著他完成一次動作，成功後立即給予稱讚或想要的東西作為鼓勵。<br><br>
+        <b>把握時機：</b>盡量在孩子平靜、專注時練習，避免勉強孩子在情緒不佳時進行。
+      </div>
+
+      <div class="parent-section-title">六個手勢與引導技巧</div>
+      <div class="mission-grid" id="parent-mission-grid"></div>
+
+      <div class="parent-section-title">今日紀錄</div>
+      <div class="log-list" id="parent-log">尚未開始練習</div>
+
+      <button class="btn-secondary" id="btn-parent-back" style="align-self:center;display:block;margin:22px auto 0;">回到孩子畫面</button>
+    </div>
+  </section>
+
+</div>
+<a class="corner-link" id="btn-open-parent">👪 家長／治療師</a>
+<div class="footer-note">示範教材・靈感參考兒童職能治療手勢介入與手影遊戲・使用 MediaPipe 手勢辨識</div>
+
+<script type="module">
+import { GestureRecognizer, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
+
+/* ---------------- PWA: register service worker ---------------- */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch((err) => console.warn('SW register failed', err));
+  });
+}
+
+/* ---------------- night-sky background ---------------- */
+const starsCanvas = document.getElementById('stars');
+const sctx = starsCanvas.getContext('2d');
+function sizeStars(){ starsCanvas.width = innerWidth; starsCanvas.height = innerHeight; }
+sizeStars();
+addEventListener('resize', sizeStars);
+const starField = Array.from({length:70}, () => ({ x: Math.random(), y: Math.random(), r: Math.random()*1.4+0.3, tw: Math.random()*Math.PI*2 }));
+function drawStars(t){
+  sctx.clearRect(0,0,starsCanvas.width, starsCanvas.height);
+  sctx.fillStyle = '#FDF6E8';
+  for(const s of starField){
+    const alpha = 0.25 + 0.55*Math.abs(Math.sin(t/1400 + s.tw));
+    sctx.globalAlpha = alpha;
+    sctx.beginPath();
+    sctx.arc(s.x*starsCanvas.width, s.y*starsCanvas.height, s.r, 0, Math.PI*2);
+    sctx.fill();
+  }
+  sctx.globalAlpha = 1;
+  requestAnimationFrame(drawStars);
+}
+requestAnimationFrame(drawStars);
+
+/* ---------------- sound (chime + speech) ---------------- */
+let soundOn = true;
+document.getElementById('sound-toggle').onclick = (e) => {
+  soundOn = !soundOn;
+  e.currentTarget.textContent = soundOn ? '🔊' : '🔇';
+};
+function playChime(){
+  if(!soundOn) return;
+  try{
+    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    const now = ctx.currentTime;
+    [523.25,659.25,783.99].forEach((f,i)=>{
+      const o = ctx.createOscillator(); const g = ctx.createGain();
+      o.type='sine'; o.frequency.value=f;
+      g.gain.setValueAtTime(0.0001, now+i*0.12);
+      g.gain.linearRampToValueAtTime(0.25, now+i*0.12+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, now+i*0.12+0.35);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(now+i*0.12); o.stop(now+i*0.12+0.4);
+    });
+  }catch(e){}
+}
+const PRAISES = ['太棒了！','你做到了！','好棒喔！','成功了！','真厲害！'];
+function speak(text){
+  if(!soundOn) return;
+  try{
+    if(!('speechSynthesis' in window)) return;
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang='zh-TW'; u.rate=0.95; u.pitch=1.15;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(u);
+  }catch(e){}
+}
+function burst(layerId){
+  const layer = document.getElementById(layerId);
+  layer.innerHTML = '';
+  const emojis = ['⭐','✨','🎉','💛'];
+  for(let i=0;i<12;i++){
+    const p = document.createElement('span');
+    p.className = 'burst-particle';
+    p.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+    const angle = Math.random()*Math.PI*2;
+    const dist = 90 + Math.random()*90;
+    p.style.setProperty('--bx', Math.cos(angle)*dist + 'px');
+    p.style.setProperty('--by', Math.sin(angle)*dist + 'px');
+    p.style.setProperty('--br', (Math.random()*360-180)+'deg');
+    p.style.animationDelay = (Math.random()*0.15)+'s';
+    layer.appendChild(p);
+  }
+}
+
+/* ---------------- mission data ---------------- */
+const MISSIONS = [
+  { id:1, name:'招手掰掰', otTag:'揮手（不要／再見）', gesture:'Open_Palm', glyph:'🖐️', animal:'🐘',
+    title:'大象耳朵飛起來', lead:'你張開手掌，就像大象揮動大耳朵，可以用來說「掰掰」或「不要」喔。',
+    demoHint:'張開手掌，輕輕搖一搖', tip:'可輕握孩子的手腕，帶他張開手掌揮一揮，成功立刻稱讚他。' },
+  { id:2, name:'指指看',   otTag:'指物（要求關注）', gesture:'Pointing_Up', glyph:'☝️', animal:'🐦',
+    title:'小鳥啄米指指手', lead:'伸出食指指向東西，是寶寶最早學會表達需求的手勢之一。',
+    demoHint:'伸出一根手指指指看', tip:'牽著孩子的手，帶他伸出食指指向他想要的物品。' },
+  { id:3, name:'大拇哥讚', otTag:'表達需求（我要）', gesture:'Thumb_Up', glyph:'👍', animal:'👍',
+    title:'大拇哥比讚讚', lead:'豎起大拇指，可以用來代替「我要」，減少用哭鬧表達需求。',
+    demoHint:'握拳，豎起大拇指', tip:'握住孩子的手，協助他豎起大拇指，可搭配「讚」的口語。' },
+  { id:4, name:'小手握拳', otTag:'抓握手勢', gesture:'Closed_Fist', glyph:'✊', animal:'🐶',
+    title:'小狗握緊拳頭鼻', lead:'握緊拳頭是抓握動作的基礎，也是許多精細動作的起點。',
+    demoHint:'把五根手指握起來', tip:'陪孩子一起握緊拳頭，可以搭配兒歌增加趣味。' },
+  { id:5, name:'勝利手勢', otTag:'社交手勢延伸', gesture:'Victory', glyph:'✌️', animal:'🐰',
+    title:'兔子耳朵比 YA', lead:'比出兔子耳朵，是孩子很喜歡的社交手勢，常搭配拍照使用。',
+    demoHint:'比出兩根手指，像兔耳朵', tip:'可先示範比出兩根手指，再引導孩子模仿一次。' },
+  { id:6, name:'比心愛你', otTag:'社交情感手勢', gesture:'ILoveYou', glyph:'🤟', animal:'💛',
+    title:'閃亮愛心手勢', lead:'這是進階的社交情感手勢，練習手指的獨立控制能力。',
+    demoHint:'豎起大拇指、食指和小指', tip:'手勢較難，可分解成先比大拇指，再慢慢加入食指與小指。' },
+];
+
+// 三個難度等級：過關後手勢會越來越「嚴格」——
+// 門檻(threshold)代表AI辨識信心分數要多高才算數，holdMs代表要保持姿勢多久
+const LEVELS = [
+  { level:1, label:'Lv.1 入門', stars:'⭐☆☆', threshold:0.38, holdMs:800  },
+  { level:2, label:'Lv.2 熟練', stars:'⭐⭐☆', threshold:0.55, holdMs:1600 },
+  { level:3, label:'Lv.3 精通', stars:'⭐⭐⭐', threshold:0.68, holdMs:2400 },
+];
+const MAX_LEVEL = LEVELS.length;
+
+// missionLevel[id] = 這個手勢目前「已經過關」的最高等級，0代表還沒過關
+let missionLevel = {};
+MISSIONS.forEach(m => missionLevel[m.id] = 0);
+
+function getNextLevel(m){
+  return Math.min(missionLevel[m.id] + 1, MAX_LEVEL);
+}
+function totalStars(){
+  return Object.values(missionLevel).reduce((a,b) => a+b, 0);
+}
+
+let sessionLog = [];
+let currentIndex = 0;
+let currentLevel = 1;
+
+/* ---------------- screen navigation ---------------- */
+const screens = {};
+document.querySelectorAll('.screen').forEach(s => screens[s.id] = s);
+function showScreen(id){
+  Object.values(screens).forEach(s => s.classList.remove('active'));
+  screens[id].classList.add('active');
+  if(id !== 'screen-play') stopCamera();
+}
+
+document.getElementById('btn-enter').onclick = () => { goToDemo(currentIndex); };
+document.getElementById('btn-open-parent').onclick = () => { renderParentPanel(); showScreen('screen-parent'); };
+document.getElementById('btn-parent-back').onclick = () => showScreen('screen-start');
+document.getElementById('btn-complete-to-parent').onclick = () => { renderParentPanel(); showScreen('screen-parent'); };
+document.getElementById('btn-restart').onclick = () => {
+  MISSIONS.forEach(m => missionLevel[m.id] = 0);
+  sessionLog = []; currentIndex = 0;
+  showScreen('screen-start');
+};
+
+/* ---------------- demo screen ---------------- */
+function renderDots(activeIdx){
+  const dots = document.getElementById('demo-dots');
+  dots.innerHTML = '';
+  MISSIONS.forEach((m,i) => {
+    const d = document.createElement('span');
+    const lvl = missionLevel[m.id];
+    if(lvl >= MAX_LEVEL) d.className = 'done';
+    else if(lvl > 0) d.className = 'partial';
+    if(i === activeIdx) d.className += ' current';
+    dots.appendChild(d);
+  });
+}
+function goToDemo(index){
+  currentIndex = index;
+  const m = MISSIONS[index];
+  const nextLevel = getNextLevel(m);
+  const levelInfo = LEVELS[nextLevel-1];
+  document.getElementById('demo-glyph').textContent = m.glyph;
+  document.getElementById('demo-name').textContent = m.name;
+  document.getElementById('demo-hint').textContent = m.demoHint;
+  document.getElementById('demo-level-badge').textContent = levelInfo.label;
+  document.getElementById('demo-level-stars').textContent = levelInfo.stars;
+  document.getElementById('btn-my-turn').textContent =
+    missionLevel[m.id] > 0 ? `挑戰 ${levelInfo.label}` : '換我試試看';
+  renderDots(index);
+  replayDemoAnim();
+  showScreen('screen-demo');
+}
+function replayDemoAnim(){
+  const g = document.getElementById('demo-glyph');
+  g.style.animation = 'none';
+  void g.offsetWidth;
+  g.style.animation = '';
+}
+document.getElementById('btn-replay').onclick = replayDemoAnim;
+document.getElementById('btn-my-turn').onclick = () => {
+  const m = MISSIONS[currentIndex];
+  startMission(m, getNextLevel(m));
+};
+document.getElementById('btn-see-demo-again').onclick = () => goToDemo(currentIndex);
+document.getElementById('hint-back-demo').onclick = () => goToDemo(currentIndex);
+
+document.getElementById('btn-next-mission').onclick = () => {
+  const next = currentIndex + 1;
+  if(next >= MISSIONS.length){
+    showScreen('screen-complete');
+    burst('burst-layer-2');
+  } else {
+    goToDemo(next);
+  }
+};
+document.getElementById('btn-level-up').onclick = () => {
+  const m = MISSIONS[currentIndex];
+  startMission(m, getNextLevel(m));
+};
+
+/* ---------------- parent panel ---------------- */
+function renderParentPanel(){
+  const grid = document.getElementById('parent-mission-grid');
+  grid.innerHTML = '';
+  MISSIONS.forEach((m,i) => {
+    const lvl = missionLevel[m.id];
+    const card = document.createElement('button');
+    card.className = 'mission-card' + (lvl >= MAX_LEVEL ? ' done' : '');
+    card.innerHTML = `
+      <span class="star">${LEVELS[Math.max(lvl,1)-1].stars}</span>
+      <span class="glyph">${m.glyph}</span>
+      <span class="m-name">${m.name}</span>
+      <span class="ot-tag">${lvl===0 ? '尚未開始' : LEVELS[lvl-1].label + ' 已過關'}</span>
+    `;
+    card.onclick = () => { goToDemo(i); };
+    grid.appendChild(card);
+  });
+
+  const logEl = document.getElementById('parent-log');
+  if(sessionLog.length === 0){
+    logEl.textContent = '尚未開始練習';
+  } else {
+    logEl.innerHTML = sessionLog.map(l =>
+      `<span class="ok">✔</span> ${l.name}　${l.levelLabel}　完成時間 ${l.time.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})}`
+    ).join('<br>');
+  }
+}
+
+/* ---------------- camera + gesture recognition ---------------- */
+const video = document.getElementById('video');
+const camCanvas = document.getElementById('cam-canvas');
+const camCtx = camCanvas.getContext('2d');
+const loadingOverlay = document.getElementById('loading-overlay');
+const loadingText = document.getElementById('loading-text');
+const loadingSpinner = document.getElementById('loading-spinner');
+const btnRetry = document.getElementById('btn-retry');
+const hintBanner = document.getElementById('hint-banner');
+
+let gestureRecognizer = null;
+let recognizerLoading = null;
+let rafId = null;
+let stream = null;
+let holdStart = null;
+let hintTimeout = null;
+let currentMission = null;
+const HINT_DELAY_MS = 15000;
+
+btnRetry.onclick = () => startCamera();
+document.getElementById('btn-exit-play').onclick = () => showScreen('screen-start');
+
+async function ensureRecognizer(){
+  if(gestureRecognizer) return gestureRecognizer;
+  if(recognizerLoading) return recognizerLoading;
+  recognizerLoading = (async () => {
+    const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
+    gestureRecognizer = await GestureRecognizer.createFromOptions(vision, {
+      baseOptions: {
+        modelAssetPath: "https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task",
+        delegate: "GPU"
+      },
+      runningMode: "VIDEO",
+      numHands: 1
+    });
+    return gestureRecognizer;
+  })();
+  return recognizerLoading;
+}
+
+function startMission(m, level){
+  currentMission = m;
+  currentLevel = level;
+  const levelInfo = LEVELS[level-1];
+  document.getElementById('target-glyph').textContent = m.glyph;
+  document.getElementById('target-name').textContent = `${m.name}　${levelInfo.stars}`;
+  document.getElementById('play-msg').textContent = '把手放進畫面裡，跟著做做看';
+  document.getElementById('hint-text').textContent = m.tip;
+  hintBanner.classList.remove('show');
+  setHoldProgress(0);
+  showScreen('screen-play');
+  startCamera();
+}
+
+async function startCamera(){
+  loadingOverlay.classList.remove('hidden');
+  loadingSpinner.style.display = 'block';
+  btnRetry.style.display = 'none';
+  loadingText.textContent = '正在開啟鏡頭與載入手勢辨識模型，第一次載入約需幾秒鐘…';
+
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode:'user', width:640, height:480 }, audio:false });
+    video.srcObject = stream;
+    await video.play();
+    await ensureRecognizer();
+    camCanvas.width = video.videoWidth || 480;
+    camCanvas.height = video.videoHeight || 640;
+    loadingOverlay.classList.add('hidden');
+    holdStart = null;
+    setHoldProgress(0);
+    clearTimeout(hintTimeout);
+    hintTimeout = setTimeout(() => hintBanner.classList.add('show'), HINT_DELAY_MS);
+    loop();
+  }catch(err){
+    loadingSpinner.style.display = 'none';
+    btnRetry.style.display = 'inline-block';
+    if(err && err.name === 'NotAllowedError'){
+      loadingText.innerHTML = '<span class="err">沒有取得鏡頭權限</span><br>請允許瀏覽器使用鏡頭，才能開始練習手勢喔。';
+    } else {
+      loadingText.innerHTML = '<span class="err">鏡頭或辨識模型載入失敗</span><br>請確認裝置有鏡頭、網路連線正常，並使用 Chrome／Edge 等瀏覽器開啟。';
+    }
+    console.error(err);
+  }
+}
+
+function stopCamera(){
+  if(rafId) cancelAnimationFrame(rafId);
+  rafId = null;
+  clearTimeout(hintTimeout);
+  hintBanner.classList.remove('show');
+  if(stream){ stream.getTracks().forEach(t => t.stop()); stream = null; }
+}
+
+function setHoldProgress(p){
+  const ring = document.getElementById('hold-ring-fg');
+  const circumference = 113;
+  ring.style.strokeDashoffset = String(circumference * (1-p));
+}
+
+function loop(){
+  rafId = requestAnimationFrame(loop);
+  if(!gestureRecognizer || video.readyState < 2) return;
+
+  const results = gestureRecognizer.recognizeForVideo(video, performance.now());
+
+  camCtx.save();
+  camCtx.drawImage(video, 0, 0, camCanvas.width, camCanvas.height);
+
+  const w = camCanvas.width, h = camCanvas.height;
+  const cx = w/2, cy = h*0.52, r = Math.min(w,h)*0.44;
+  const grad = camCtx.createRadialGradient(cx,cy,r*0.25, cx,cy,r*1.35);
+  grad.addColorStop(0, 'rgba(13,20,36,0)');
+  grad.addColorStop(0.6, 'rgba(13,20,36,0.12)');
+  grad.addColorStop(1, 'rgba(13,20,36,0.82)');
+  camCtx.fillStyle = grad;
+  camCtx.fillRect(0,0,w,h);
+  camCtx.strokeStyle = 'rgba(245,169,63,0.55)';
+  camCtx.lineWidth = 3;
+  camCtx.beginPath();
+  camCtx.arc(cx,cy,r,0,Math.PI*2);
+  camCtx.stroke();
+  camCtx.restore();
+
+  let detected = null, score = 0;
+  if(results.gestures && results.gestures.length > 0 && results.gestures[0].length > 0){
+    detected = results.gestures[0][0].categoryName;
+    score = results.gestures[0][0].score;
+  }
+
+  const msgEl = document.getElementById('play-msg');
+  const target = currentMission.gesture;
+  const levelInfo = LEVELS[currentLevel-1];
+
+  if(detected && detected !== 'None' && score > levelInfo.threshold && detected === target){
+    msgEl.textContent = '好棒，保持住～';
+    if(holdStart === null) holdStart = performance.now();
+    const elapsed = performance.now() - holdStart;
+    setHoldProgress(Math.min(1, elapsed / levelInfo.holdMs));
+    if(elapsed >= levelInfo.holdMs){
+      holdStart = null;
+      onMissionSuccess();
+    }
+  } else {
+    holdStart = null;
+    setHoldProgress(0);
+    msgEl.textContent = '跟著示範做做看，你可以的！';
+  }
+}
+
+function onMissionSuccess(){
+  stopCamera();
+  const levelInfo = LEVELS[currentLevel-1];
+  if(missionLevel[currentMission.id] < currentLevel){
+    missionLevel[currentMission.id] = currentLevel;
+  }
+  sessionLog.push({ name: currentMission.name, levelLabel: levelInfo.label, time: new Date() });
+
+  document.getElementById('success-glyph').textContent = currentMission.animal;
+  document.getElementById('success-star-count').textContent = `⭐ 總星數 ${totalStars()} / ${MISSIONS.length * MAX_LEVEL}`;
+
+  const levelUpBtn = document.getElementById('btn-level-up');
+  if(currentLevel < MAX_LEVEL){
+    const nextInfo = LEVELS[currentLevel];
+    document.getElementById('success-title').textContent = `過關！解鎖 ${nextInfo.label}`;
+    document.getElementById('success-lead').textContent =
+      `${currentMission.title}——你完成了 ${levelInfo.label}，要不要挑戰更難一點的等級？`;
+    levelUpBtn.style.display = 'inline-block';
+    levelUpBtn.textContent = `挑戰 ${nextInfo.label}`;
+  } else {
+    document.getElementById('success-title').textContent = '達到最高等級！';
+    document.getElementById('success-lead').textContent =
+      `${currentMission.title}——你已經是這個手勢的高手了，太厲害了！`;
+    levelUpBtn.style.display = 'none';
+  }
+
+  showScreen('screen-success');
+  burst('burst-layer');
+  playChime();
+  speak(PRAISES[Math.floor(Math.random()*PRAISES.length)]);
+}
+</script>
+</body>
+</html>
