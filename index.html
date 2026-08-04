@@ -164,8 +164,6 @@
   .parent-section-title{ font-size:13px; font-weight:700; color:var(--gold-soft); margin:18px 0 10px; }
   .log-list{ font-size:12.5px; color:var(--dim); line-height:2; }
   .log-list .ok{ color:var(--mint); }
-  .prompt-hint-list{ font-size:12px; color:var(--dim); line-height:1.9; }
-  .prompt-hint-list li{ margin-bottom:6px; }
 
   /* ---- play screen ---- */
   #screen-play{ padding:0; }
@@ -194,21 +192,21 @@
     position:absolute; bottom:0; left:0; right:0; z-index:3; padding:16px 18px 20px;
     background:linear-gradient(to top, rgba(13,20,36,.9), rgba(13,20,36,0)); text-align:center;
   }
-  .status-banner .msg{ font-size:14px; font-weight:700; color:var(--gold-soft); min-height:20px; }
+  .status-banner .msg{ font-size:15px; font-weight:700; color:var(--gold-soft); min-height:22px; }
   .hold-ring-wrap{ display:flex; justify-content:center; margin-top:10px; }
-  svg.hold-ring{ width:44px; height:44px; }
+  svg.hold-ring{ width:48px; height:48px; }
   svg.hold-ring circle.bg{ stroke:rgba(255,255,255,.15); }
   svg.hold-ring circle.fg{ stroke:var(--gold-glow); stroke-linecap:round; transition:stroke-dashoffset .08s linear; }
 
   .hint-banner{
     position:absolute; top:64px; left:14px; right:14px; z-index:4;
-    background:rgba(255,122,102,.14); border:1px solid rgba(255,122,102,.4);
+    background:rgba(255,122,102,.16); border:1px solid rgba(255,122,102,.45);
     border-radius:14px; padding:12px 14px; font-size:12px; line-height:1.7; color:var(--cream);
     display:none; text-align:center;
   }
   .hint-banner.show{ display:block; animation:fadeUp .3s ease; }
   .hint-banner button{
-    margin-top:8px; background:rgba(255,255,255,.12); color:var(--cream); font-size:11px;
+    margin-top:8px; background:rgba(255,255,255,.15); color:var(--cream); font-size:11px;
     padding:6px 14px; border-radius:999px;
   }
 
@@ -257,7 +255,7 @@
     <div class="eyebrow">手影小任務・早療版</div>
     <h1 class="title">跟著<span class="accent">手影</span>學手勢</h1>
     <p class="lead">先看示範，再照著鏡子模仿。一次只練一個手勢，做到就有星星鼓勵！</p>
-    <button class="btn-primary" id="btn-enter">開始</button>
+    <button class="btn-primary" id="btn-enter">開始練習</button>
   </section>
 
   <!-- DEMO -->
@@ -356,7 +354,7 @@
 
 </div>
 <a class="corner-link" id="btn-open-parent">👪 家長／治療師</a>
-<div class="footer-note">示範教材・靈感參考兒童職能治療手勢介入與手影遊戲・使用 MediaPipe 手勢辨識</div>
+<div class="footer-note">早療兒童手勢學習系統・靈感參考職能治療 OT 手勢介入・MediaPipe AI 驅動</div>
 
 <script type="module">
 import { GestureRecognizer, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
@@ -390,6 +388,140 @@ function drawStars(t){
 }
 requestAnimationFrame(drawStars);
 
+/* ==========================================================================
+   BLOCK 1: SKELETON DRAWER (手部骨架繪製)
+   ========================================================================== */
+const HAND_CONNECTIONS = [
+  [0,1],[1,2],[2,3],[3,4],       // Thumb
+  [0,5],[5,6],[6,7],[7,8],       // Index
+  [9,10],[10,11],[11,12],        // Middle
+  [13,14],[14,15],[15,16],      // Ring
+  [0,17],[17,18],[18,19],[19,20],// Pinky
+  [5,9],[9,13],[13,17]           // Palm
+];
+
+function drawHandSkeleton(ctx, landmarks, width, height) {
+  if (!landmarks || landmarks.length === 0) return;
+
+  ctx.save();
+  ctx.strokeStyle = '#F5A93F';
+  ctx.lineWidth = 5;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.shadowColor = 'rgba(245, 169, 63, 0.85)';
+  ctx.shadowBlur = 12;
+
+  for (const [startIdx, endIdx] of HAND_CONNECTIONS) {
+    const p1 = landmarks[startIdx];
+    const p2 = landmarks[endIdx];
+    if (p1 && p2) {
+      ctx.beginPath();
+      ctx.moveTo(p1.x * width, p1.y * height);
+      ctx.lineTo(p2.x * width, p2.y * height);
+      ctx.stroke();
+    }
+  }
+
+  for (let i = 0; i < landmarks.length; i++) {
+    const p = landmarks[i];
+    const px = p.x * width;
+    const py = p.y * height;
+    const isFingertip = [4, 8, 12, 16, 20].includes(i);
+    const radius = isFingertip ? 8.5 : 5;
+
+    ctx.beginPath();
+    ctx.arc(px, py, radius + 2, 0, Math.PI * 2);
+    ctx.fillStyle = isFingertip ? 'rgba(255, 217, 142, 0.95)' : 'rgba(245, 169, 63, 0.7)';
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(px, py, radius, 0, Math.PI * 2);
+    ctx.fillStyle = isFingertip ? '#FFFFFF' : '#FFD98E';
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+/* ==========================================================================
+   BLOCK 2: DYNAMIC GESTURE TRACKER (動態手勢與軌跡繪製)
+   ========================================================================== */
+class DynamicGestureTracker {
+  constructor() {
+    this.history = [];
+    this.palmHistory = [];
+    this.maxHistory = 18;
+    this.lastDirection = 0;
+  }
+
+  clear() {
+    this.history = [];
+    this.palmHistory = [];
+    this.lastDirection = 0;
+  }
+
+  update(landmarks, timestamp) {
+    if (!landmarks || landmarks.length < 21) {
+      this.clear();
+      return { isWaving: false };
+    }
+
+    const tip = landmarks[8];
+    const palm = landmarks[9];
+
+    this.history.push({ x: tip.x, y: tip.y, t: timestamp });
+    if (this.history.length > this.maxHistory) this.history.shift();
+
+    this.palmHistory.push({ x: palm.x, t: timestamp });
+    if (this.palmHistory.length > 12) this.palmHistory.shift();
+
+    let isWaving = false;
+    if (this.palmHistory.length >= 6) {
+      const recent = this.palmHistory;
+      let dxAccumulator = 0;
+      let changes = 0;
+
+      for (let i = 1; i < recent.length; i++) {
+        const dx = recent[i].x - recent[i - 1].x;
+        dxAccumulator += Math.abs(dx);
+
+        const currentDir = dx > 0.005 ? 1 : (dx < -0.005 ? -1 : 0);
+        if (currentDir !== 0 && currentDir !== this.lastDirection) {
+          if (this.lastDirection !== 0) changes++;
+          this.lastDirection = currentDir;
+        }
+      }
+
+      if (changes >= 1 && dxAccumulator > 0.08) {
+        isWaving = true;
+      }
+    }
+
+    return { isWaving };
+  }
+
+  drawTrail(ctx, width, height) {
+    if (this.history.length < 2) return;
+
+    ctx.save();
+    for (let i = 1; i < this.history.length; i++) {
+      const p1 = this.history[i - 1];
+      const p2 = this.history[i];
+      const alpha = i / this.history.length;
+
+      ctx.beginPath();
+      ctx.moveTo(p1.x * width, p1.y * height);
+      ctx.lineTo(p2.x * width, p2.y * height);
+      ctx.strokeStyle = `rgba(255, 217, 142, ${alpha * 0.8})`;
+      ctx.lineWidth = alpha * 7;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+}
+
+const motionTracker = new DynamicGestureTracker();
+
 /* ---------------- sound (chime + speech) ---------------- */
 let soundOn = true;
 document.getElementById('sound-toggle').onclick = (e) => {
@@ -418,7 +550,7 @@ function speak(text){
   try{
     if(!('speechSynthesis' in window)) return;
     const u = new SpeechSynthesisUtterance(text);
-    u.lang='zh-TW'; u.rate=0.95; u.pitch=1.15;
+    u.lang='zh-TW'; u.rate=0.9; u.pitch=1.2;
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(u);
   }catch(e){}
@@ -549,7 +681,7 @@ function renderParentPanel(){
     logEl.textContent = '尚未開始練習';
   } else {
     logEl.innerHTML = sessionLog.map(l =>
-      `<span class="ok">✔</span> ${l.name}　完成時間 ${l.time.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})}`
+      `<span class="ok">✔</span> ${l.name} 完成時間 ${l.time.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})}`
     ).join('<br>');
   }
 }
@@ -571,9 +703,11 @@ let stream = null;
 let holdStart = null;
 let hintTimeout = null;
 let currentMission = null;
-const HOLD_MS = 1000;
-const SCORE_THRESHOLD = 0.42;
-const HINT_DELAY_MS = 15000;
+
+// 早療友善參數配置
+const HOLD_MS = 800;          // 連續維持時間 800ms
+const SCORE_THRESHOLD = 0.38; // 信心度門檻放寬
+const HINT_DELAY_MS = 10000;  // 10秒提示引導
 
 btnRetry.onclick = () => startCamera();
 document.getElementById('btn-exit-play').onclick = () => showScreen('screen-start');
@@ -581,6 +715,7 @@ document.getElementById('btn-exit-play').onclick = () => showScreen('screen-star
 async function ensureRecognizer(){
   if(gestureRecognizer) return gestureRecognizer;
   if(recognizerLoading) return recognizerLoading;
+
   recognizerLoading = (async () => {
     const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
     gestureRecognizer = await GestureRecognizer.createFromOptions(vision, {
@@ -598,6 +733,7 @@ async function ensureRecognizer(){
 
 function startMission(m){
   currentMission = m;
+  motionTracker.clear();
   document.getElementById('target-glyph').textContent = m.glyph;
   document.getElementById('target-name').textContent = m.name;
   document.getElementById('play-msg').textContent = '把手放進畫面裡，跟著做做看';
@@ -615,12 +751,19 @@ async function startCamera(){
   loadingText.textContent = '正在開啟鏡頭與載入手勢辨識模型，第一次載入約需幾秒鐘…';
 
   try{
-    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode:'user', width:640, height:480 }, audio:false });
+    // 相機啟動相容性邏輯 (向下相容)
+    const constraints = { video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false };
+    try {
+      stream = await navigator.mediaDevices.getUserMedia(constraints);
+    } catch (e) {
+      stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    }
+
     video.srcObject = stream;
     await video.play();
     await ensureRecognizer();
-    camCanvas.width = video.videoWidth || 480;
-    camCanvas.height = video.videoHeight || 640;
+    camCanvas.width = video.videoWidth || 640;
+    camCanvas.height = video.videoHeight || 480;
     loadingOverlay.classList.add('hidden');
     holdStart = null;
     setHoldProgress(0);
@@ -630,12 +773,17 @@ async function startCamera(){
   }catch(err){
     loadingSpinner.style.display = 'none';
     btnRetry.style.display = 'inline-block';
-    if(err && err.name === 'NotAllowedError'){
-      loadingText.innerHTML = '<span class="err">沒有取得鏡頭權限</span><br>請允許瀏覽器使用鏡頭，才能開始練習手勢喔。';
+    console.error("Camera Error details:", err);
+
+    if(location.protocol === 'file:'){
+      loadingText.innerHTML = '<span class="err">無法以 file:// 開啟鏡頭</span><br>請使用 Live Server 或部署至 HTTPS 網址開啟本網頁。';
+    } else if(err && (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError')){
+      loadingText.innerHTML = '<span class="err">沒有取得鏡頭權限</span><br>請點擊網址列左側鎖頭圖示，開啟相機權限後重新整理。';
+    } else if(err && (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError')){
+      loadingText.innerHTML = '<span class="err">找不到鏡頭裝置</span><br>請確認電腦或手機的鏡頭已正常連接。';
     } else {
-      loadingText.innerHTML = '<span class="err">鏡頭或辨識模型載入失敗</span><br>請確認裝置有鏡頭、網路連線正常，並使用 Chrome／Edge 等瀏覽器開啟。';
+      loadingText.innerHTML = `<span class="err">鏡頭啟動失敗 (${err.name || 'Unknown'})</span><br>請確認鏡頭未被其他軟體佔用，並使用 Chrome / Edge 開啟。`;
     }
-    console.error(err);
   }
 }
 
@@ -657,7 +805,8 @@ function loop(){
   rafId = requestAnimationFrame(loop);
   if(!gestureRecognizer || video.readyState < 2) return;
 
-  const results = gestureRecognizer.recognizeForVideo(video, performance.now());
+  const now = performance.now();
+  const gestureResults = gestureRecognizer.recognizeForVideo(video, now);
 
   camCtx.save();
   camCtx.drawImage(video, 0, 0, camCanvas.width, camCanvas.height);
@@ -677,17 +826,37 @@ function loop(){
   camCtx.stroke();
   camCtx.restore();
 
+  // BLOCK 1 & 2: 純手部骨架與動態流光繪製
+  let dynamicStatus = { isWaving: false };
+
+  if (gestureResults.landmarks && gestureResults.landmarks.length > 0) {
+    const handLandmarks = gestureResults.landmarks[0];
+    drawHandSkeleton(camCtx, handLandmarks, w, h);
+    dynamicStatus = motionTracker.update(handLandmarks, now);
+    motionTracker.drawTrail(camCtx, w, h);
+  } else {
+    motionTracker.clear();
+  }
+
+  // 手勢判定
   let detected = null, score = 0;
-  if(results.gestures && results.gestures.length > 0 && results.gestures[0].length > 0){
-    detected = results.gestures[0][0].categoryName;
-    score = results.gestures[0][0].score;
+  if(gestureResults.gestures && gestureResults.gestures.length > 0 && gestureResults.gestures[0].length > 0){
+    detected = gestureResults.gestures[0][0].categoryName;
+    score = gestureResults.gestures[0][0].score;
   }
 
   const msgEl = document.getElementById('play-msg');
   const target = currentMission.gesture;
 
-  if(detected && detected !== 'None' && score > SCORE_THRESHOLD && detected === target){
-    msgEl.textContent = '好棒，保持住～';
+  let isMatch = false;
+  if (currentMission.id === 1) { // 招手任務
+    isMatch = (detected === 'Open_Palm' && score > SCORE_THRESHOLD) || dynamicStatus.isWaving;
+  } else {
+    isMatch = (detected && detected !== 'None' && score > SCORE_THRESHOLD && detected === target);
+  }
+
+  if(isMatch){
+    msgEl.textContent = currentMission.id === 1 && dynamicStatus.isWaving ? '搖搖手很棒，保持住～' : '好棒，保持住～';
     if(holdStart === null) holdStart = performance.now();
     const elapsed = performance.now() - holdStart;
     setHoldProgress(Math.min(1, elapsed / HOLD_MS));
