@@ -95,7 +95,10 @@
     position:fixed; bottom:16px; right:18px; z-index:20;
     font-size:11px; color:rgba(137,150,190,.7); background:rgba(255,255,255,.05);
     padding:7px 12px; border-radius:999px; text-decoration:none; display:flex; gap:6px; align-items:center;
+    user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; touch-action:none;
+    transition:background .15s ease, color .15s ease;
   }
+  .corner-link.pressing{ background:rgba(245,169,63,.35); color:var(--cream); }
   .sound-toggle{
     position:fixed; top:16px; right:18px; z-index:20;
     width:38px; height:38px; border-radius:50%;
@@ -125,7 +128,23 @@
     display:flex; align-items:center; justify-content:center;
     margin-bottom:6px;
   }
-  .demo-glyph{ font-size:78px; display:inline-block; animation:demoWiggle 1.8s ease-in-out infinite; }
+  .demo-glyph{ font-size:24px; display:inline-block; margin-right:6px; vertical-align:-2px; }
+  .demo-stage{
+    width:230px; height:230px; border-radius:50%;
+    background:radial-gradient(circle, rgba(245,169,63,.22), rgba(245,169,63,0) 72%);
+    margin-bottom:4px;
+  }
+  .demo-stage canvas{ width:100%; height:100%; display:block; }
+  .demo-steps{ display:flex; flex-wrap:wrap; justify-content:center; gap:6px; margin-top:8px; }
+  .demo-steps span{
+    font-size:12.5px; font-weight:700; color:var(--gold-soft);
+    background:rgba(245,169,63,.13); padding:5px 12px; border-radius:999px;
+  }
+  .btn-primary:disabled{ opacity:.55; cursor:default; transform:none; box-shadow:none; }
+  .demo-progress{ width:140px; height:4px; border-radius:2px; background:rgba(255,255,255,.1); margin-top:10px; overflow:hidden; }
+  .demo-progress i{ display:block; height:100%; width:0; background:var(--gold-glow); }
+  .demo-progress.run i{ animation:demoFill var(--demo-ms,3400ms) linear forwards; }
+  @keyframes demoFill{ from{width:0;} to{width:100%;} }
   @keyframes demoWiggle{
     0%,100%{ transform:rotate(-8deg) scale(1); }
     50%{ transform:rotate(8deg) scale(1.08); }
@@ -164,6 +183,8 @@
   .parent-section-title{ font-size:13px; font-weight:700; color:var(--gold-soft); margin:18px 0 10px; }
   .log-list{ font-size:12.5px; color:var(--dim); line-height:2; }
   .log-list .ok{ color:var(--mint); }
+  .prompt-hint-list{ font-size:12px; color:var(--dim); line-height:1.9; }
+  .prompt-hint-list li{ margin-bottom:6px; }
 
   /* ---- play screen ---- */
   #screen-play{ padding:0; }
@@ -171,7 +192,7 @@
     position:relative; width:min(94vw, 480px); aspect-ratio:3/4; border-radius:26px; overflow:hidden;
     background:#000; box-shadow:0 0 0 1px rgba(255,255,255,.06), 0 20px 60px rgba(0,0,0,.5);
   }
-  #cam-canvas{ width:100%; height:100%; display:block; transform:scaleX(-1); }
+  #cam-canvas{ width:100%; height:100%; display:block; transform:scaleX(-1); object-fit:cover; }
   video{ display:none; }
 
   .play-topbar{
@@ -192,21 +213,48 @@
     position:absolute; bottom:0; left:0; right:0; z-index:3; padding:16px 18px 20px;
     background:linear-gradient(to top, rgba(13,20,36,.9), rgba(13,20,36,0)); text-align:center;
   }
-  .status-banner .msg{ font-size:15px; font-weight:700; color:var(--gold-soft); min-height:22px; }
+  .status-banner .msg{ font-size:14px; font-weight:700; color:var(--gold-soft); min-height:20px; }
   .hold-ring-wrap{ display:flex; justify-content:center; margin-top:10px; }
-  svg.hold-ring{ width:48px; height:48px; }
+  svg.hold-ring{ width:44px; height:44px; }
   svg.hold-ring circle.bg{ stroke:rgba(255,255,255,.15); }
   svg.hold-ring circle.fg{ stroke:var(--gold-glow); stroke-linecap:round; transition:stroke-dashoffset .08s linear; }
 
+  .skeleton-toggle{
+    position:absolute; bottom:104px; right:14px; z-index:4;
+    width:34px; height:34px; border-radius:50%;
+    background:rgba(13,20,36,.6); backdrop-filter:blur(6px);
+    color:var(--cream); font-size:15px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .skeleton-toggle.off{ opacity:.45; }
+
+  .mini-demo{
+    position:absolute; bottom:104px; left:14px; z-index:4;
+    width:96px; height:116px; border-radius:16px; overflow:hidden;
+    background:rgba(13,20,36,.72); backdrop-filter:blur(6px);
+    border:1px solid rgba(255,255,255,.14);
+    display:flex; flex-direction:column; align-items:center;
+    transition:transform .3s ease, border-color .3s ease;
+    transform-origin:bottom left;
+  }
+  .mini-demo canvas{ width:96px; height:96px; display:block; }
+  .mini-demo .cap{ font-size:10.5px; font-weight:700; color:var(--gold-soft); line-height:20px; }
+  .mini-demo.attention{ transform:scale(1.35); border-color:var(--gold-glow); animation:miniPulse 1.4s ease-in-out infinite; }
+  @keyframes miniPulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(245,169,63,.5);} 50%{ box-shadow:0 0 0 10px rgba(245,169,63,0);} }
+  .hint-banner .hint-title{ font-size:11px; font-weight:700; color:var(--gold-soft); letter-spacing:.08em; margin-bottom:2px; }
+  .hint-banner .hint-text{ font-size:14px; font-weight:700; line-height:1.6; }
+  #hint-back-demo{ display:none; }
+  .hint-banner.lv2 #hint-back-demo, .hint-banner.lv3 #hint-back-demo{ display:inline-block; }
+
   .hint-banner{
     position:absolute; top:64px; left:14px; right:14px; z-index:4;
-    background:rgba(255,122,102,.16); border:1px solid rgba(255,122,102,.45);
+    background:rgba(245,169,63,.18); border:1px solid rgba(245,169,63,.5); backdrop-filter:blur(6px);
     border-radius:14px; padding:12px 14px; font-size:12px; line-height:1.7; color:var(--cream);
     display:none; text-align:center;
   }
   .hint-banner.show{ display:block; animation:fadeUp .3s ease; }
   .hint-banner button{
-    margin-top:8px; background:rgba(255,255,255,.15); color:var(--cream); font-size:11px;
+    margin-top:8px; background:rgba(255,255,255,.12); color:var(--cream); font-size:11px;
     padding:6px 14px; border-radius:999px;
   }
 
@@ -255,18 +303,20 @@
     <div class="eyebrow">手影小任務・早療版</div>
     <h1 class="title">跟著<span class="accent">手影</span>學手勢</h1>
     <p class="lead">先看示範，再照著鏡子模仿。一次只練一個手勢，做到就有星星鼓勵！</p>
-    <button class="btn-primary" id="btn-enter">開始練習</button>
+    <button class="btn-primary" id="btn-enter">開始</button>
   </section>
 
   <!-- DEMO -->
   <section id="screen-demo" class="screen">
     <div class="progress-dots" id="demo-dots"></div>
     <div class="demo-card">
-      <div class="demo-glyph-wrap"><span class="demo-glyph" id="demo-glyph">🖐️</span></div>
-      <h2 id="demo-name">招手掰掰</h2>
+      <div class="demo-stage"><canvas id="demo-canvas"></canvas></div>
+      <h2><span class="demo-glyph" id="demo-glyph">🖐️</span><span id="demo-name">招手掰掰</span></h2>
+      <div class="demo-steps" id="demo-steps"></div>
       <p class="demo-hint" id="demo-hint">看我，可以這樣做手勢喔</p>
       <div class="demo-actions">
-        <button class="btn-primary" id="btn-my-turn">換我試試看</button>
+        <button class="btn-primary" id="btn-my-turn" disabled>看我做一次…</button>
+        <div class="demo-progress" id="demo-progress"><i></i></div>
         <button class="replay-btn" id="btn-replay">🔁 再看一次</button>
       </div>
     </div>
@@ -285,10 +335,17 @@
       </div>
 
       <div class="hint-banner" id="hint-banner">
-        <span id="hint-text">請家長輕輕引導孩子的手，一起完成手勢吧</span>
-        <br>
+        <div class="hint-title" id="hint-title">小提示</div>
+        <div class="hint-text" id="hint-text">請家長輕輕引導孩子的手，一起完成手勢吧</div>
         <button id="hint-back-demo">再看一次示範</button>
       </div>
+
+      <div class="mini-demo" id="mini-demo-wrap">
+        <canvas id="mini-demo"></canvas>
+        <div class="cap">跟我做</div>
+      </div>
+
+      <button class="skeleton-toggle" id="btn-skeleton-toggle" title="顯示/隱藏手部骨架">✋</button>
 
       <div class="status-banner">
         <div class="msg" id="play-msg">把手放進畫面裡，跟著做做看</div>
@@ -317,7 +374,7 @@
     <div class="eyebrow">做到了</div>
     <h1 class="title" id="success-title">手影變出來了！</h1>
     <p class="lead" id="success-lead">你成功擺出了這個手勢，太棒了！</p>
-    <div class="star-count" id="success-star-count">⭐ 已點亮 1 / 6 顆星星</div>
+    <div class="star-count" id="success-star-count">⭐ 已點亮 1 / 5 顆星星</div>
     <button class="btn-primary" id="btn-next-mission">繼續下一個</button>
   </section>
 
@@ -326,7 +383,7 @@
     <div class="burst-layer" id="burst-layer-2"></div>
     <div class="torch"><div class="beam"></div><div class="glyph">🌟</div></div>
     <div class="eyebrow">全部完成</div>
-    <h1 class="title">六個手勢都學會了！</h1>
+    <h1 class="title">五個手勢都學會了！</h1>
     <p class="lead">今天練習得很棒，休息一下，下次可以再複習一次。</p>
     <button class="btn-primary" id="btn-restart">重新開始</button>
     <button class="btn-ghost" id="btn-complete-to-parent">查看家長紀錄</button>
@@ -342,19 +399,32 @@
         <b>把握時機：</b>盡量在孩子平靜、專注時練習，避免勉強孩子在情緒不佳時進行。
       </div>
 
-      <div class="parent-section-title">六個手勢與引導技巧</div>
+      <div class="parent-section-title">App 的教學流程與提示機制</div>
+      <div class="log-list" style="line-height:1.9">
+        <b style="color:var(--cream)">① 先示範：</b>每個手勢都會先用骨架動畫做一次標準動作並念出說明，看完一輪才能按「換我試試看」。<br>
+        <b style="color:var(--cream)">② 邊做邊對照：</b>練習時左下角有「跟我做」小示範窗，孩子可以一邊看一邊模仿。<br>
+        <b style="color:var(--cream)">③ 太久沒成功會漸進提示：</b><br>
+        　‧ 約 8 秒：一句簡單提示（會念出來），小示範窗放大閃爍<br>
+        　‧ 約 18 秒：更具體的調整說明，並出現「再看一次示範」<br>
+        　‧ 約 30 秒：顯示家長引導方式（手把手協助）<br>
+        　‧ 若鏡頭看不到手，提示會改成「怎麼讓我看到你的手」（把手舉到圈圈裡）<br>
+        孩子一做對，提示就會收起來並重新計時。
+      </div>
+
+      <div class="parent-section-title">五個手勢與引導技巧</div>
       <div class="mission-grid" id="parent-mission-grid"></div>
 
       <div class="parent-section-title">今日紀錄</div>
       <div class="log-list" id="parent-log">尚未開始練習</div>
 
       <button class="btn-secondary" id="btn-parent-back" style="align-self:center;display:block;margin:22px auto 0;">回到孩子畫面</button>
+      <button class="btn-ghost" id="btn-clear-log" style="display:block;margin:10px auto 0;">清除所有練習紀錄</button>
     </div>
   </section>
 
 </div>
-<a class="corner-link" id="btn-open-parent">👪 家長／治療師</a>
-<div class="footer-note">早療兒童手勢學習系統・靈感參考職能治療 OT 手勢介入・MediaPipe AI 驅動</div>
+<a class="corner-link" id="btn-open-parent">👪 長按進入家長模式</a>
+<div class="footer-note">示範教材・靈感參考兒童職能治療手勢介入與手影遊戲・使用 MediaPipe 手勢辨識</div>
 
 <script type="module">
 import { GestureRecognizer, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
@@ -365,6 +435,16 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch((err) => console.warn('SW register failed', err));
   });
 }
+
+/* ---------------- 閒置時預先載入手勢模型：第一次按「換我試試看」不用再等，也順便存進離線快取 ---------------- */
+function preloadModelsWhenIdle(){
+  const conn = navigator.connection;
+  if(conn && (conn.saveData || /(^|-)2g$/.test(conn.effectiveType || ''))) return; // 省流量模式/很慢的網路就不預載
+  const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 2500));
+  idle(() => { ensureRecognizer().catch(() => {}); });
+}
+if(document.readyState === 'complete') preloadModelsWhenIdle();
+else window.addEventListener('load', preloadModelsWhenIdle);
 
 /* ---------------- night-sky background ---------------- */
 const starsCanvas = document.getElementById('stars');
@@ -388,150 +468,29 @@ function drawStars(t){
 }
 requestAnimationFrame(drawStars);
 
-/* ==========================================================================
-   BLOCK 1: SKELETON DRAWER (手部骨架繪製)
-   ========================================================================== */
-const HAND_CONNECTIONS = [
-  [0,1],[1,2],[2,3],[3,4],       // Thumb
-  [0,5],[5,6],[6,7],[7,8],       // Index
-  [9,10],[10,11],[11,12],        // Middle
-  [13,14],[14,15],[15,16],      // Ring
-  [0,17],[17,18],[18,19],[19,20],// Pinky
-  [5,9],[9,13],[13,17]           // Palm
-];
-
-function drawHandSkeleton(ctx, landmarks, width, height) {
-  if (!landmarks || landmarks.length === 0) return;
-
-  ctx.save();
-  ctx.strokeStyle = '#F5A93F';
-  ctx.lineWidth = 5;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  ctx.shadowColor = 'rgba(245, 169, 63, 0.85)';
-  ctx.shadowBlur = 12;
-
-  for (const [startIdx, endIdx] of HAND_CONNECTIONS) {
-    const p1 = landmarks[startIdx];
-    const p2 = landmarks[endIdx];
-    if (p1 && p2) {
-      ctx.beginPath();
-      ctx.moveTo(p1.x * width, p1.y * height);
-      ctx.lineTo(p2.x * width, p2.y * height);
-      ctx.stroke();
-    }
-  }
-
-  for (let i = 0; i < landmarks.length; i++) {
-    const p = landmarks[i];
-    const px = p.x * width;
-    const py = p.y * height;
-    const isFingertip = [4, 8, 12, 16, 20].includes(i);
-    const radius = isFingertip ? 8.5 : 5;
-
-    ctx.beginPath();
-    ctx.arc(px, py, radius + 2, 0, Math.PI * 2);
-    ctx.fillStyle = isFingertip ? 'rgba(255, 217, 142, 0.95)' : 'rgba(245, 169, 63, 0.7)';
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.arc(px, py, radius, 0, Math.PI * 2);
-    ctx.fillStyle = isFingertip ? '#FFFFFF' : '#FFD98E';
-    ctx.fill();
-  }
-  ctx.restore();
-}
-
-/* ==========================================================================
-   BLOCK 2: DYNAMIC GESTURE TRACKER (動態手勢與軌跡繪製)
-   ========================================================================== */
-class DynamicGestureTracker {
-  constructor() {
-    this.history = [];
-    this.palmHistory = [];
-    this.maxHistory = 18;
-    this.lastDirection = 0;
-  }
-
-  clear() {
-    this.history = [];
-    this.palmHistory = [];
-    this.lastDirection = 0;
-  }
-
-  update(landmarks, timestamp) {
-    if (!landmarks || landmarks.length < 21) {
-      this.clear();
-      return { isWaving: false };
-    }
-
-    const tip = landmarks[8];
-    const palm = landmarks[9];
-
-    this.history.push({ x: tip.x, y: tip.y, t: timestamp });
-    if (this.history.length > this.maxHistory) this.history.shift();
-
-    this.palmHistory.push({ x: palm.x, t: timestamp });
-    if (this.palmHistory.length > 12) this.palmHistory.shift();
-
-    let isWaving = false;
-    if (this.palmHistory.length >= 6) {
-      const recent = this.palmHistory;
-      let dxAccumulator = 0;
-      let changes = 0;
-
-      for (let i = 1; i < recent.length; i++) {
-        const dx = recent[i].x - recent[i - 1].x;
-        dxAccumulator += Math.abs(dx);
-
-        const currentDir = dx > 0.005 ? 1 : (dx < -0.005 ? -1 : 0);
-        if (currentDir !== 0 && currentDir !== this.lastDirection) {
-          if (this.lastDirection !== 0) changes++;
-          this.lastDirection = currentDir;
-        }
-      }
-
-      if (changes >= 1 && dxAccumulator > 0.08) {
-        isWaving = true;
-      }
-    }
-
-    return { isWaving };
-  }
-
-  drawTrail(ctx, width, height) {
-    if (this.history.length < 2) return;
-
-    ctx.save();
-    for (let i = 1; i < this.history.length; i++) {
-      const p1 = this.history[i - 1];
-      const p2 = this.history[i];
-      const alpha = i / this.history.length;
-
-      ctx.beginPath();
-      ctx.moveTo(p1.x * width, p1.y * height);
-      ctx.lineTo(p2.x * width, p2.y * height);
-      ctx.strokeStyle = `rgba(255, 217, 142, ${alpha * 0.8})`;
-      ctx.lineWidth = alpha * 7;
-      ctx.lineCap = 'round';
-      ctx.stroke();
-    }
-    ctx.restore();
-  }
-}
-
-const motionTracker = new DynamicGestureTracker();
-
 /* ---------------- sound (chime + speech) ---------------- */
 let soundOn = true;
 document.getElementById('sound-toggle').onclick = (e) => {
   soundOn = !soundOn;
   e.currentTarget.textContent = soundOn ? '🔊' : '🔇';
 };
+let audioCtx = null;
+function getAudioCtx(){
+  if(!audioCtx){
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if(AC) audioCtx = new AC();
+  }
+  if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+  return audioCtx;
+}
+// iOS/Safari 需要使用者操作後才能出聲，第一次點擊時先解鎖
+document.addEventListener('pointerdown', () => { try{ getAudioCtx(); }catch(e){} }, { once:true });
+
 function playChime(){
   if(!soundOn) return;
   try{
-    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    const ctx = getAudioCtx();
+    if(!ctx) return;
     const now = ctx.currentTime;
     [523.25,659.25,783.99].forEach((f,i)=>{
       const o = ctx.createOscillator(); const g = ctx.createGain();
@@ -550,7 +509,7 @@ function speak(text){
   try{
     if(!('speechSynthesis' in window)) return;
     const u = new SpeechSynthesisUtterance(text);
-    u.lang='zh-TW'; u.rate=0.9; u.pitch=1.2;
+    u.lang='zh-TW'; u.rate=0.95; u.pitch=1.15;
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(u);
   }catch(e){}
@@ -573,31 +532,213 @@ function burst(layerId){
   }
 }
 
+/* ---------------- hand skeleton connections (21 landmarks, MediaPipe standard) ---------------- */
+const HAND_CONNECTIONS = [
+  [0,1],[1,2],[2,3],[3,4],           // 拇指
+  [0,5],[5,6],[6,7],[7,8],           // 食指
+  [5,9],[9,10],[10,11],[11,12],      // 中指
+  [9,13],[13,14],[14,15],[15,16],    // 無名指
+  [13,17],[17,18],[18,19],[19,20],   // 小指
+  [0,17]                              // 手掌底部連接
+];
+let showSkeleton = true;
+
 /* ---------------- mission data ---------------- */
 const MISSIONS = [
   { id:1, name:'招手掰掰', otTag:'揮手（不要／再見）', gesture:'Open_Palm', glyph:'🖐️', animal:'🐘',
     title:'大象耳朵飛起來', lead:'你張開手掌，就像大象揮動大耳朵，可以用來說「掰掰」或「不要」喔。',
-    demoHint:'張開手掌，輕輕搖一搖', tip:'可輕握孩子的手腕，帶他張開手掌揮一揮，成功立刻稱讚他。' },
-  { id:2, name:'指指看',   otTag:'指物（要求關注）', gesture:'Pointing_Up', glyph:'☝️', animal:'🐦',
+    demoHint:'張開手掌，輕輕搖一搖', tip:'可輕握孩子的手腕，帶他張開手掌揮一揮，成功立刻稱讚他。',
+    demo:{ type:'static', pose:'Open_Palm' }, steps:['手掌打開','五指張開'],
+    hints:['把手掌打開，五根手指都張開喔','手舉高一點，手掌對著鏡頭'] },
+  { id:2, name:'指指看', otTag:'指物（要求關注）', gesture:'Pointing_Up', glyph:'☝️', animal:'🐦',
     title:'小鳥啄米指指手', lead:'伸出食指指向東西，是寶寶最早學會表達需求的手勢之一。',
-    demoHint:'伸出一根手指指指看', tip:'牽著孩子的手，帶他伸出食指指向他想要的物品。' },
+    demoHint:'伸出一根手指指指看', tip:'牽著孩子的手，帶他伸出食指指向他想要的物品。',
+    demo:{ type:'static', pose:'Pointing_Up' }, steps:['其他手指收起來','伸出食指'],
+    hints:['只伸出一根食指，其他手指收起來','食指往上指，像在指天花板'] },
   { id:3, name:'大拇哥讚', otTag:'表達需求（我要）', gesture:'Thumb_Up', glyph:'👍', animal:'👍',
     title:'大拇哥比讚讚', lead:'豎起大拇指，可以用來代替「我要」，減少用哭鬧表達需求。',
-    demoHint:'握拳，豎起大拇指', tip:'握住孩子的手，協助他豎起大拇指，可搭配「讚」的口語。' },
+    demoHint:'握拳，豎起大拇指', tip:'握住孩子的手，協助他豎起大拇指，可搭配「讚」的口語。',
+    demo:{ type:'static', pose:'Thumb_Up' }, steps:['先握拳','豎起大拇指'],
+    hints:['先握拳，再把大拇指豎起來','大拇指往上，其他四根手指握緊'] },
   { id:4, name:'小手握拳', otTag:'抓握手勢', gesture:'Closed_Fist', glyph:'✊', animal:'🐶',
     title:'小狗握緊拳頭鼻', lead:'握緊拳頭是抓握動作的基礎，也是許多精細動作的起點。',
-    demoHint:'把五根手指握起來', tip:'陪孩子一起握緊拳頭，可以搭配兒歌增加趣味。' },
+    demoHint:'把五根手指握起來', tip:'陪孩子一起握緊拳頭，可以搭配兒歌增加趣味。',
+    demo:{ type:'static', pose:'Closed_Fist' }, steps:['五根手指','全部握起來'],
+    hints:['把五根手指都握起來，像握著小球','握緊一點，讓手指靠近手掌'] },
   { id:5, name:'勝利手勢', otTag:'社交手勢延伸', gesture:'Victory', glyph:'✌️', animal:'🐰',
     title:'兔子耳朵比 YA', lead:'比出兔子耳朵，是孩子很喜歡的社交手勢，常搭配拍照使用。',
-    demoHint:'比出兩根手指，像兔耳朵', tip:'可先示範比出兩根手指，再引導孩子模仿一次。' },
-  { id:6, name:'比心愛你', otTag:'社交情感手勢', gesture:'ILoveYou', glyph:'🤟', animal:'💛',
-    title:'閃亮愛心手勢', lead:'這是進階的社交情感手勢，練習手指的獨立控制能力。',
-    demoHint:'豎起大拇指、食指和小指', tip:'手勢較難，可分解成先比大拇指，再慢慢加入食指與小指。' },
+    demoHint:'比出兩根手指，像兔耳朵', tip:'可先示範比出兩根手指，再引導孩子模仿一次。',
+    demo:{ type:'static', pose:'Victory' }, steps:['伸出食指和中指','其他收起來'],
+    hints:['伸出食指和中指，像兔子耳朵','另外三根手指收好，兩根手指分開一點'] },
 ];
 
 let starsEarned = new Set();
 let sessionLog = [];
 let currentIndex = 0;
+
+/* ---------------- progress persistence (只存在這支手機/瀏覽器本機，不上傳) ---------------- */
+const STORE_KEY = 'shadow-hand-missions:progress:v1';
+const MAX_LOG = 300;
+function saveProgress(){
+  try{
+    localStorage.setItem(STORE_KEY, JSON.stringify({
+      stars: [...starsEarned],
+      log: sessionLog.slice(-MAX_LOG).map(l => ({ id:l.id, name:l.name, time:l.time.toISOString() }))
+    }));
+  }catch(e){ /* 私密模式或儲存空間滿了：忽略，App 仍可正常使用 */ }
+}
+function loadProgress(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(!raw) return;
+    const d = JSON.parse(raw);
+    starsEarned = new Set((d.stars || []).filter(id => MISSIONS.some(m => m.id === id)));
+    sessionLog = (d.log || [])
+      .map(l => ({ id:l.id, name:l.name, time:new Date(l.time) }))
+      .filter(l => !isNaN(l.time) && MISSIONS.some(m => m.name === l.name));
+  }catch(e){ /* 資料損毀就當作沒有紀錄 */ }
+}
+loadProgress();
+
+/* ---------------- 示範動畫：用手的剪影＋骨架「演」給孩子看 ---------------- */
+const DEG = Math.PI / 180;
+const lerp = (a, b, t) => a + (b - a) * t;
+const easeInOut = (t) => t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2) / 2;
+
+// 手部模型（手掌朝向鏡頭、手指朝上，單位＝手掌大小）。curl：0=伸直 1=握起
+const FINGER_BASE = { index:[-0.50,-1.00], middle:[-0.17,-1.08], ring:[0.16,-1.02], pinky:[0.46,-0.90] };
+const FINGER_LEN  = { index:[0.50,0.30,0.25], middle:[0.55,0.33,0.26], ring:[0.50,0.30,0.25], pinky:[0.40,0.22,0.20] };
+const FLEX = [75, 160, 215].map(d => d * DEG);
+const FINGER_NAMES = ['index','middle','ring','pinky'];
+const THUMB_BASE = [-0.30, -0.15];
+
+function fingerPoints(name, curl, spreadDeg){
+  const [bx, by] = FINGER_BASE[name], L = FINGER_LEN[name];
+  const a = spreadDeg * DEG, dx = Math.sin(a), dy = -Math.cos(a);
+  const pts = [[bx, by]];
+  let x = bx, y = by;
+  for(let i = 0; i < 3; i++){
+    const len = L[i] * Math.cos(FLEX[i] * curl);   // 手指彎下去，從正面看起來就會縮短
+    x += dx * len; y += dy * len;
+    pts.push([x, y]);
+  }
+  return pts;
+}
+// 依 MediaPipe 的順序組成 21 個點：0 手腕、1-4 拇指、5-8 食指、9-12 中指、13-16 無名指、17-20 小指
+function handLandmarks(pose){
+  const lm = [[0, 0], THUMB_BASE, ...pose.thumb];
+  FINGER_NAMES.forEach((n, i) => lm.push(...fingerPoints(n, pose.curl[i], pose.spread[i])));
+  return lm;
+}
+// 拇指直接指定三個關節的位置（比用角度算更好控制：豎起來、包在手指外面都看得清楚）
+const HAND_POSES = {
+  relaxed:     { thumb:[[-0.48,-0.40],[-0.55,-0.62],[-0.55,-0.82]], curl:[0.45,0.45,0.45,0.45], spread:[-4,0,3,6] },
+  Open_Palm:   { thumb:[[-0.60,-0.40],[-0.82,-0.58],[-0.98,-0.76]], curl:[0,0,0,0],             spread:[-8,-2,4,12] },
+  Pointing_Up: { thumb:[[-0.20,-0.42],[0.02,-0.52],[0.20,-0.45]],   curl:[0,1,1,1],             spread:[0,0,0,0] },
+  Thumb_Up:    { thumb:[[-0.58,-0.60],[-0.76,-1.10],[-0.86,-1.52]], curl:[1,1,1,1],             spread:[0,0,0,0] },
+  Closed_Fist: { thumb:[[-0.18,-0.45],[0.08,-0.60],[0.30,-0.55]],   curl:[1,1,1,1],             spread:[0,0,0,0] },
+  Victory:     { thumb:[[-0.20,-0.42],[0.02,-0.50],[0.20,-0.42]],   curl:[0,0,1,1],             spread:[-12,10,0,0] },
+};
+function lerpPose(a, b, t){
+  return {
+    thumb:  a.thumb.map((p, i) => [lerp(p[0], b.thumb[i][0], t), lerp(p[1], b.thumb[i][1], t)]),
+    curl:   a.curl.map((v, i) => lerp(v, b.curl[i], t)),
+    spread: a.spread.map((v, i) => lerp(v, b.spread[i], t)),
+  };
+}
+
+// 手的剪影：手掌輪廓 ＋ 每根手指／拇指畫成圓頭的粗線，孩子一眼就看得出是一隻手
+const PALM_OUTLINE = [[-0.32,0.05],[-0.44,-0.25],[-0.56,-1.00],[-0.17,-1.12],[0.16,-1.06],[0.52,-0.90],[0.34,0.05]];
+const FINGER_WIDTH = [0.20, 0.21, 0.20, 0.17];
+const SIL_FILL = '#3F5088', SIL_EDGE = '#8FA0D6';
+const DEMO_CREAM = 'rgba(253,246,232,0.92)';
+const DEMO_GOLD  = 'rgba(245,169,63,1)';
+
+function tx(p, pl){
+  const X = pl.mirror ? -p[0] : p[0], c = Math.cos(pl.rot || 0), s = Math.sin(pl.rot || 0);
+  return [pl.ox + (X * c - p[1] * s) * pl.scale, pl.oy + (X * s + p[1] * c) * pl.scale];
+}
+function drawHandFigure(ctx, lm, pl, H){
+  const palm = PALM_OUTLINE.map(p => tx(p, pl));
+  const strokes = FINGER_NAMES.map((n, i) => ({ pts:[5+i*4, 6+i*4, 7+i*4, 8+i*4].map(k => tx(lm[k], pl)), w:FINGER_WIDTH[i] * pl.scale }));
+  strokes.push({ pts:[1, 2, 3, 4].map(k => tx(lm[k], pl)), w:0.28 * pl.scale });   // 拇指比其他手指粗
+  const path = (pts, close) => { ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); if(close) ctx.closePath(); };
+  const pass = (extra, color) => {
+    ctx.save();
+    ctx.fillStyle = color; ctx.strokeStyle = color; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.lineWidth = 0.14 * pl.scale + extra; path(palm, true); ctx.fill(); ctx.stroke();
+    for(const s of strokes){ ctx.lineWidth = s.w + extra; path(s.pts, false); ctx.stroke(); }
+    ctx.restore();
+  };
+  pass(H * 0.018, SIL_EDGE);   // 先畫稍微大一圈的亮邊
+  pass(0, SIL_FILL);           // 再畫實心填色，就形成有外框的剪影
+
+  // 骨架疊在上面（跟遊戲中即時顯示的骨架一樣）
+  const pts = lm.map(p => tx(p, pl));
+  ctx.save();
+  ctx.strokeStyle = DEMO_CREAM; ctx.lineWidth = Math.max(1.5, H * 0.011); ctx.lineCap = 'round';
+  for(const [a, b] of HAND_CONNECTIONS){ ctx.beginPath(); ctx.moveTo(pts[a][0], pts[a][1]); ctx.lineTo(pts[b][0], pts[b][1]); ctx.stroke(); }
+  pts.forEach((p, i) => {
+    const tip = [4, 8, 12, 16, 20].includes(i);
+    ctx.beginPath(); ctx.arc(p[0], p[1], H * (tip ? 0.022 : 0.012), 0, Math.PI * 2);
+    ctx.fillStyle = tip ? DEMO_GOLD : DEMO_CREAM; ctx.fill();
+  });
+  ctx.restore();
+}
+function glow(ctx, x, y, r, alpha){
+  const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+  g.addColorStop(0, `rgba(245,169,63,${alpha})`); g.addColorStop(1, 'rgba(245,169,63,0)');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+}
+
+// 動作節奏：「準備 → 做出動作 → 維持 → 放鬆」，維持的那段讓孩子看清楚正確的樣子
+function holdCurve(p){
+  if(p < 0.15) return 0;
+  if(p < 0.40) return easeInOut((p - 0.15) / 0.25);
+  if(p < 0.85) return 1;
+  return 1 - easeInOut((p - 0.85) / 0.15);
+}
+const DEMO_CYCLE_MS = 3400;
+
+function renderDemo(ctx, H, m, t){
+  ctx.clearRect(0, 0, H, H);
+  const k = holdCurve((t % DEMO_CYCLE_MS) / DEMO_CYCLE_MS);
+  const lm = handLandmarks(lerpPose(HAND_POSES.relaxed, HAND_POSES[m.demo.pose], k));
+  if(k === 1) glow(ctx, H/2, H*0.48, H*0.44, 0.16 + 0.05 * Math.sin(t / 180));
+  drawHandFigure(ctx, lm, { ox:H/2, oy:H*0.90, scale:H*0.34, rot:0, mirror:false }, H);
+}
+
+// 單一動畫迴圈：同一時間只畫「目前畫面上看得到的那一個」畫布，其他畫面不耗電
+const demoCanvasBig  = document.getElementById('demo-canvas');
+const demoCanvasMini = document.getElementById('mini-demo');
+let demoCanvas = null, demoCtx = null, demoSize = 0, demoMission = null;
+let demoRaf = null, demoT0 = 0, onDemoCycleEnd = null;
+
+function setDemoTarget(canvas, mission){
+  if(demoRaf) cancelAnimationFrame(demoRaf);
+  demoRaf = null; onDemoCycleEnd = null;
+  demoCanvas = (canvas && mission) ? canvas : null;
+  demoMission = mission || null;
+  if(!demoCanvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  const css = Math.round(demoCanvas.getBoundingClientRect().width) || demoCanvas.clientWidth || 96;
+  demoSize = css;
+  demoCanvas.width = Math.round(css * dpr); demoCanvas.height = Math.round(css * dpr);
+  demoCtx = demoCanvas.getContext('2d');
+  demoCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  demoT0 = performance.now();
+  demoRaf = requestAnimationFrame(demoTick);
+}
+function restartDemo(){ setDemoTarget(demoCanvas, demoMission); }
+function demoTick(now){
+  if(!demoCanvas) return;
+  demoRaf = requestAnimationFrame(demoTick);
+  const t = now - demoT0;
+  renderDemo(demoCtx, demoSize, demoMission, t);
+  if(onDemoCycleEnd && t >= DEMO_CYCLE_MS){
+    const cb = onDemoCycleEnd; onDemoCycleEnd = null; cb();
+  }
+}
 
 /* ---------------- screen navigation ---------------- */
 const screens = {};
@@ -606,15 +747,42 @@ function showScreen(id){
   Object.values(screens).forEach(s => s.classList.remove('active'));
   screens[id].classList.add('active');
   if(id !== 'screen-play') stopCamera();
+  if(id === 'screen-demo') setDemoTarget(demoCanvasBig, MISSIONS[currentIndex]);
+  else if(id === 'screen-play') setDemoTarget(demoCanvasMini, currentMission);
+  else setDemoTarget(null, null);
 }
 
 document.getElementById('btn-enter').onclick = () => { goToDemo(currentIndex); };
-document.getElementById('btn-open-parent').onclick = () => { renderParentPanel(); showScreen('screen-parent'); };
+function openParentPanel(){ renderParentPanel(); showScreen('screen-parent'); }
+
+// 家長入口：長按 1.2 秒才會開啟，避免幼兒亂點誤入
+(function setupParentGate(){
+  const link = document.getElementById('btn-open-parent');
+  const HOLD = 1200;
+  let timer = null;
+  const cancel = () => { clearTimeout(timer); timer = null; link.classList.remove('pressing'); };
+  link.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    link.classList.add('pressing');
+    timer = setTimeout(() => { cancel(); openParentPanel(); }, HOLD);
+  });
+  ['pointerup','pointerleave','pointercancel'].forEach(ev => link.addEventListener(ev, cancel));
+  link.addEventListener('contextmenu', e => e.preventDefault());
+})();
+
 document.getElementById('btn-parent-back').onclick = () => showScreen('screen-start');
-document.getElementById('btn-complete-to-parent').onclick = () => { renderParentPanel(); showScreen('screen-parent'); };
+document.getElementById('btn-complete-to-parent').onclick = openParentPanel;
 document.getElementById('btn-restart').onclick = () => {
-  starsEarned = new Set(); sessionLog = []; currentIndex = 0;
+  // 只重置孩子這一輪的星星；家長的歷史紀錄保留，要清除請到家長面板
+  starsEarned = new Set(); currentIndex = 0;
+  saveProgress();
   showScreen('screen-start');
+};
+document.getElementById('btn-clear-log').onclick = () => {
+  if(!confirm('確定要清除所有練習紀錄與星星嗎？此動作無法復原。')) return;
+  starsEarned = new Set(); sessionLog = []; currentIndex = 0;
+  saveProgress();
+  renderParentPanel();
 };
 
 /* ---------------- demo screen ---------------- */
@@ -628,23 +796,42 @@ function renderDots(activeIdx){
     dots.appendChild(d);
   });
 }
+const demoSeen = new Set();   // 這個手勢的示範，本次使用中是否已經完整看過一輪
 function goToDemo(index){
   currentIndex = index;
   const m = MISSIONS[index];
   document.getElementById('demo-glyph').textContent = m.glyph;
   document.getElementById('demo-name').textContent = m.name;
   document.getElementById('demo-hint').textContent = m.demoHint;
+  document.getElementById('demo-steps').innerHTML = m.steps.map((t, i) => `<span>${i+1}　${t}</span>`).join('');
   renderDots(index);
-  replayDemoAnim();
   showScreen('screen-demo');
+  armDemoGate(m);
+  speak('看我做一次。' + m.demoHint);
 }
-function replayDemoAnim(){
-  const g = document.getElementById('demo-glyph');
-  g.style.animation = 'none';
-  void g.offsetWidth;
-  g.style.animation = '';
+// 教授的要求：開始之前一定要先給示範。示範完整播過一輪，「換我試試看」才會亮起來
+function armDemoGate(m){
+  const btn = document.getElementById('btn-my-turn');
+  const bar = document.getElementById('demo-progress');
+  bar.classList.remove('run'); void bar.offsetWidth;
+  if(demoSeen.has(m.id)){
+    btn.disabled = false; btn.textContent = '換我試試看'; bar.style.visibility = 'hidden';
+    return;
+  }
+  btn.disabled = true; btn.textContent = '看我做一次…'; bar.style.visibility = 'visible';
+  bar.style.setProperty('--demo-ms', DEMO_CYCLE_MS + 'ms');
+  bar.classList.add('run');
+  onDemoCycleEnd = () => {
+    demoSeen.add(m.id);
+    btn.disabled = false; btn.textContent = '換我試試看';
+    bar.style.visibility = 'hidden';
+  };
 }
-document.getElementById('btn-replay').onclick = replayDemoAnim;
+document.getElementById('btn-replay').onclick = () => {
+  restartDemo();
+  armDemoGate(MISSIONS[currentIndex]);
+  speak(MISSIONS[currentIndex].demoHint);
+};
 document.getElementById('btn-my-turn').onclick = () => startMission(MISSIONS[currentIndex]);
 document.getElementById('btn-see-demo-again').onclick = () => goToDemo(currentIndex);
 document.getElementById('hint-back-demo').onclick = () => goToDemo(currentIndex);
@@ -680,9 +867,13 @@ function renderParentPanel(){
   if(sessionLog.length === 0){
     logEl.textContent = '尚未開始練習';
   } else {
-    logEl.innerHTML = sessionLog.map(l =>
-      `<span class="ok">✔</span> ${l.name} 完成時間 ${l.time.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})}`
-    ).join('<br>');
+    const todayStr = new Date().toDateString();
+    const today = sessionLog.filter(l => l.time.toDateString() === todayStr);
+    const days = new Set(sessionLog.map(l => l.time.toDateString())).size;
+    const todayHtml = today.length
+      ? today.map(l => `<span class="ok">✔</span> ${l.name}　${l.time.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})}`).join('<br>')
+      : '今天還沒有練習';
+    logEl.innerHTML = `${todayHtml}<br><br><span style="color:var(--gold-soft)">累計：共完成 ${sessionLog.length} 次練習，分佈在 ${days} 天</span>`;
   }
 }
 
@@ -701,99 +892,134 @@ let recognizerLoading = null;
 let rafId = null;
 let stream = null;
 let holdStart = null;
-let hintTimeout = null;
 let currentMission = null;
-
-// 早療友善參數配置
-const HOLD_MS = 800;          // 連續維持時間 800ms
-const SCORE_THRESHOLD = 0.38; // 信心度門檻放寬
-const HINT_DELAY_MS = 10000;  // 10秒提示引導
+const HOLD_MS = 1000;
+const SCORE_THRESHOLD = 0.42;
 
 btnRetry.onclick = () => startCamera();
 document.getElementById('btn-exit-play').onclick = () => showScreen('screen-start');
+document.getElementById('btn-skeleton-toggle').onclick = (e) => {
+  showSkeleton = !showSkeleton;
+  e.currentTarget.classList.toggle('off', !showSkeleton);
+};
+
+const GESTURE_MODEL_URL = "https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task";
+const WASM_URL          = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm";
+
+// wasm 設定只解析一次；失敗時清掉快取，讓「再試一次」真的會重新嘗試
+let visionFilesetPromise = null;
+function getVisionFileset(){
+  if(!visionFilesetPromise){
+    visionFilesetPromise = FilesetResolver.forVisionTasks(WASM_URL)
+      .catch(e => { visionFilesetPromise = null; throw e; });
+  }
+  return visionFilesetPromise;
+}
+
+// GPU 加速在部分裝置會失敗，失敗時自動改用 CPU，而不是直接讓整個功能壞掉
+async function createWithFallback(factory){
+  try{ return await factory('GPU'); }
+  catch(e){
+    console.warn('GPU delegate 失敗，改用 CPU', e);
+    return await factory('CPU');
+  }
+}
 
 async function ensureRecognizer(){
   if(gestureRecognizer) return gestureRecognizer;
   if(recognizerLoading) return recognizerLoading;
-
   recognizerLoading = (async () => {
-    const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
-    gestureRecognizer = await GestureRecognizer.createFromOptions(vision, {
-      baseOptions: {
-        modelAssetPath: "https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task",
-        delegate: "GPU"
-      },
-      runningMode: "VIDEO",
-      numHands: 1
-    });
+    const vision = await getVisionFileset();
+    gestureRecognizer = await createWithFallback((delegate) =>
+      GestureRecognizer.createFromOptions(vision, {
+        baseOptions: { modelAssetPath: GESTURE_MODEL_URL, delegate },
+        runningMode: "VIDEO",
+        numHands: 1
+      })
+    );
     return gestureRecognizer;
-  })();
+  })().catch(e => { recognizerLoading = null; throw e; });
   return recognizerLoading;
 }
 
 function startMission(m){
   currentMission = m;
-  motionTracker.clear();
   document.getElementById('target-glyph').textContent = m.glyph;
   document.getElementById('target-name').textContent = m.name;
-  document.getElementById('play-msg').textContent = '把手放進畫面裡，跟著做做看';
-  document.getElementById('hint-text').textContent = m.tip;
-  hintBanner.classList.remove('show');
+  setMsg('把手放進畫面裡，跟著做做看');
+  hideHint();
   setHoldProgress(0);
   showScreen('screen-play');
   startCamera();
 }
 
+// 每次開鏡頭/關鏡頭都換一個編號。若使用者在模型還在載入時就按了離開，
+// 之後才回來的非同步流程會發現編號對不上而自動放棄，不會留下一個偷偷開著的鏡頭
+let camSession = 0;
+
 async function startCamera(){
+  const session = ++camSession;
   loadingOverlay.classList.remove('hidden');
   loadingSpinner.style.display = 'block';
   btnRetry.style.display = 'none';
   loadingText.textContent = '正在開啟鏡頭與載入手勢辨識模型，第一次載入約需幾秒鐘…';
 
   try{
-    // 相機啟動相容性邏輯 (向下相容)
-    const constraints = { video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false };
-    try {
-      stream = await navigator.mediaDevices.getUserMedia(constraints);
-    } catch (e) {
-      stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-    }
-
-    video.srcObject = stream;
+    const s = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode:'user', width:640, height:480 },
+      audio:false
+    });
+    if(session !== camSession){ s.getTracks().forEach(t => t.stop()); return; }
+    stream = s;
+    video.srcObject = s;
     await video.play();
+    if(session !== camSession) return;
     await ensureRecognizer();
-    camCanvas.width = video.videoWidth || 640;
-    camCanvas.height = video.videoHeight || 480;
+    if(session !== camSession) return;
+
+    camCanvas.width = video.videoWidth || 480;
+    camCanvas.height = video.videoHeight || 640;
     loadingOverlay.classList.add('hidden');
     holdStart = null;
+    lastDetectAt = 0; lastVideoTime = -1; lastHandLms = null;
     setHoldProgress(0);
-    clearTimeout(hintTimeout);
-    hintTimeout = setTimeout(() => hintBanner.classList.add('show'), HINT_DELAY_MS);
+    resetHints();
     loop();
   }catch(err){
+    if(session !== camSession) return;
     loadingSpinner.style.display = 'none';
     btnRetry.style.display = 'inline-block';
-    console.error("Camera Error details:", err);
-
-    if(location.protocol === 'file:'){
-      loadingText.innerHTML = '<span class="err">無法以 file:// 開啟鏡頭</span><br>請使用 Live Server 或部署至 HTTPS 網址開啟本網頁。';
-    } else if(err && (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError')){
-      loadingText.innerHTML = '<span class="err">沒有取得鏡頭權限</span><br>請點擊網址列左側鎖頭圖示，開啟相機權限後重新整理。';
-    } else if(err && (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError')){
-      loadingText.innerHTML = '<span class="err">找不到鏡頭裝置</span><br>請確認電腦或手機的鏡頭已正常連接。';
+    if(err && err.name === 'NotAllowedError'){
+      loadingText.innerHTML = '<span class="err">沒有取得鏡頭權限</span><br>請允許瀏覽器使用鏡頭，才能開始練習手勢喔。';
+    } else if(err && err.name === 'NotFoundError'){
+      loadingText.innerHTML = '<span class="err">找不到鏡頭</span><br>請確認裝置有前鏡頭，且沒有被其他程式佔用。';
     } else {
-      loadingText.innerHTML = `<span class="err">鏡頭啟動失敗 (${err.name || 'Unknown'})</span><br>請確認鏡頭未被其他軟體佔用，並使用 Chrome / Edge 開啟。`;
+      loadingText.innerHTML = '<span class="err">鏡頭或辨識模型載入失敗</span><br>請確認網路連線正常，再按「再試一次」。';
     }
+    console.error(err);
   }
 }
 
 function stopCamera(){
+  camSession++;
   if(rafId) cancelAnimationFrame(rafId);
   rafId = null;
-  clearTimeout(hintTimeout);
-  hintBanner.classList.remove('show');
+  hideHint();
   if(stream){ stream.getTracks().forEach(t => t.stop()); stream = null; }
+  video.srcObject = null;
 }
+
+// App 被切到背景（切換分頁、鎖屏、接電話）時自動關鏡頭，省電也保護隱私；回來時自動接續
+let resumeAfterVisible = false;
+document.addEventListener('visibilitychange', () => {
+  const playing = screens['screen-play'].classList.contains('active');
+  if(document.hidden){
+    if(playing){ resumeAfterVisible = true; stopCamera(); }
+  } else if(resumeAfterVisible){
+    resumeAfterVisible = false;
+    if(playing) startCamera();
+  }
+});
 
 function setHoldProgress(p){
   const ring = document.getElementById('hold-ring-fg');
@@ -801,23 +1027,84 @@ function setHoldProgress(p){
   ring.style.strokeDashoffset = String(circumference * (1-p));
 }
 
-function loop(){
-  rafId = requestAnimationFrame(loop);
-  if(!gestureRecognizer || video.readyState < 2) return;
+const msgEl = document.getElementById('play-msg');
+function setMsg(text){ if(msgEl.textContent !== text) msgEl.textContent = text; }
 
+/* ---------------- 分階段提示：太久沒成功，就一步一步更明確地幫忙 ---------------- */
+// 教授的要求：太久沒成功要加提示詞。做法是「由輕到重」，避免一下子就讓孩子覺得自己做錯了：
+//   第1階段（8 秒）  一句簡單的提示 ＋ 示範小視窗放大閃爍
+//   第2階段（18 秒） 更具體的調整說明 ＋ 出現「再看一次示範」
+//   第3階段（30 秒） 請家長協助的手把手引導方式
+// 另外會判斷「根本看不到手」，這種情況給的是「怎麼讓我看到你的手」的提示，而不是教手勢
+const HINT_AT_MS = [8000, 18000, 30000];
+const UNSEEN_AFTER_MS = 3000;
+let hintLevel = 0, lastProgressAt = 0, lastSeenAt = 0, lastHintKey = null;
+const hintTitleEl = document.getElementById('hint-title');
+const hintTextEl  = document.getElementById('hint-text');
+const miniDemoWrap = document.getElementById('mini-demo-wrap');
+
+function hideHint(){
+  hintLevel = 0;
+  hintBanner.classList.remove('show', 'lv1', 'lv2', 'lv3');
+  miniDemoWrap.classList.remove('attention');
+}
+function resetHints(){
   const now = performance.now();
-  const gestureResults = gestureRecognizer.recognizeForVideo(video, now);
+  lastProgressAt = now; lastSeenAt = now; lastHintKey = null;
+  hideHint();
+}
+function hintFor(level, unseen){
+  const m = currentMission;
+  if(unseen){
+    const base = '我看不到你的手喔，把手舉到圈圈裡面';
+    return level === 3 ? { title:'家長小幫手', text: base + '（可以協助調整鏡頭位置與光線）' }
+                       : { title:'小提示', text: base };
+  }
+  if(level === 3) return { title:'家長小幫手', text: m.tip };
+  return { title: level === 1 ? '小提示' : '再試試看', text: m.hints[level - 1] };
+}
+function checkHints(now){
+  const idle = now - lastProgressAt;
+  let level = 0;
+  HINT_AT_MS.forEach((ms, i) => { if(idle >= ms) level = i + 1; });
+  const unseen = (now - lastSeenAt) > UNSEEN_AFTER_MS;
+  // 階段變高，或「看不到手」的狀況剛好改變，都要更新提示內容
+  const key = level + (unseen ? 'u' : 'n');
+  if(level === 0 || key === lastHintKey) return;
+  lastHintKey = key;
+  hintLevel = level;
+  const h = hintFor(level, unseen);
+  hintTitleEl.textContent = h.title;
+  hintTextEl.textContent = h.text;
+  hintBanner.classList.remove('lv1', 'lv2', 'lv3');
+  hintBanner.classList.add('show', 'lv' + level);
+  miniDemoWrap.classList.add('attention');
+  if(level < 3) speak(h.text);   // 孩子不一定識字，第1、2階段會念出來；家長提示只顯示文字
+}
 
-  camCtx.save();
-  camCtx.drawImage(video, 0, 0, camCanvas.width, camCanvas.height);
+/* ---------------- main loop：畫面每一幀都重畫，但AI偵測限速 ---------------- */
+// AI 偵測是最耗電的部分。孩子的動作不需要每秒 60 次判斷，約 20 次/秒就足夠靈敏，
+// 手機的發熱與耗電會明顯下降。畫面本身仍然每一幀更新，所以看起來依然流暢。
+const DETECT_INTERVAL_MS = 50;
+let lastDetectAt = 0;
+let lastVideoTime = -1;
+let lastHandLms = null;   // 最近一次偵測到的手部骨架（每一幀重畫用）
 
+let backdropGradient = null, backdropKey = '';
+function drawBackdrop(){
   const w = camCanvas.width, h = camCanvas.height;
+  camCtx.drawImage(video, 0, 0, w, h);
   const cx = w/2, cy = h*0.52, r = Math.min(w,h)*0.44;
-  const grad = camCtx.createRadialGradient(cx,cy,r*0.25, cx,cy,r*1.35);
-  grad.addColorStop(0, 'rgba(13,20,36,0)');
-  grad.addColorStop(0.6, 'rgba(13,20,36,0.12)');
-  grad.addColorStop(1, 'rgba(13,20,36,0.82)');
-  camCtx.fillStyle = grad;
+  const key = `${w}x${h}`;
+  if(key !== backdropKey){   // 漸層只在尺寸改變時重建，不用每一幀重算
+    backdropGradient = camCtx.createRadialGradient(cx,cy,r*0.25, cx,cy,r*1.35);
+    backdropGradient.addColorStop(0, 'rgba(13,20,36,0)');
+    backdropGradient.addColorStop(0.6, 'rgba(13,20,36,0.12)');
+    backdropGradient.addColorStop(1, 'rgba(13,20,36,0.82)');
+    backdropKey = key;
+  }
+  camCtx.save();
+  camCtx.fillStyle = backdropGradient;
   camCtx.fillRect(0,0,w,h);
   camCtx.strokeStyle = 'rgba(245,169,63,0.55)';
   camCtx.lineWidth = 3;
@@ -825,38 +1112,45 @@ function loop(){
   camCtx.arc(cx,cy,r,0,Math.PI*2);
   camCtx.stroke();
   camCtx.restore();
+}
 
-  // BLOCK 1 & 2: 純手部骨架與動態流光繪製
-  let dynamicStatus = { isWaving: false };
+function loop(){
+  rafId = requestAnimationFrame(loop);
+  if(video.readyState < 2 || !gestureRecognizer) return;
 
-  if (gestureResults.landmarks && gestureResults.landmarks.length > 0) {
-    const handLandmarks = gestureResults.landmarks[0];
-    drawHandSkeleton(camCtx, handLandmarks, w, h);
-    dynamicStatus = motionTracker.update(handLandmarks, now);
-    motionTracker.drawTrail(camCtx, w, h);
-  } else {
-    motionTracker.clear();
+  drawBackdrop();
+
+  const now = performance.now();
+  if(now - lastDetectAt >= DETECT_INTERVAL_MS && video.currentTime !== lastVideoTime){
+    lastDetectAt = now;
+    lastVideoTime = video.currentTime;   // 同一張畫面不重複分析
+    updateHold(detectHandFrame(now));
+    checkHints(now);
   }
 
-  // 手勢判定
+  if(showSkeleton && lastHandLms){
+    for(const lm of lastHandLms) drawHandSkeleton(lm, camCanvas.width, camCanvas.height);
+  }
+}
+
+function detectHandFrame(now){
+  const res = gestureRecognizer.recognizeForVideo(video, now);
+  lastHandLms = (res.landmarks && res.landmarks.length > 0) ? res.landmarks : null;
+  if(lastHandLms) lastSeenAt = now;
+
   let detected = null, score = 0;
-  if(gestureResults.gestures && gestureResults.gestures.length > 0 && gestureResults.gestures[0].length > 0){
-    detected = gestureResults.gestures[0][0].categoryName;
-    score = gestureResults.gestures[0][0].score;
+  if(res.gestures && res.gestures.length > 0 && res.gestures[0].length > 0){
+    detected = res.gestures[0][0].categoryName;
+    score = res.gestures[0][0].score;
   }
+  return !!(detected && detected !== 'None' && score > SCORE_THRESHOLD && detected === currentMission.gesture);
+}
 
-  const msgEl = document.getElementById('play-msg');
-  const target = currentMission.gesture;
-
-  let isMatch = false;
-  if (currentMission.id === 1) { // 招手任務
-    isMatch = (detected === 'Open_Palm' && score > SCORE_THRESHOLD) || dynamicStatus.isWaving;
-  } else {
-    isMatch = (detected && detected !== 'None' && score > SCORE_THRESHOLD && detected === target);
-  }
-
+function updateHold(isMatch){
   if(isMatch){
-    msgEl.textContent = currentMission.id === 1 && dynamicStatus.isWaving ? '搖搖手很棒，保持住～' : '好棒，保持住～';
+    setMsg('好棒，保持住～');
+    lastProgressAt = performance.now();           // 有做對就重新計時，並收起提示
+    if(hintLevel > 0){ lastHintKey = null; hideHint(); }
     if(holdStart === null) holdStart = performance.now();
     const elapsed = performance.now() - holdStart;
     setHoldProgress(Math.min(1, elapsed / HOLD_MS));
@@ -867,14 +1161,37 @@ function loop(){
   } else {
     holdStart = null;
     setHoldProgress(0);
-    msgEl.textContent = '跟著示範做做看，你可以的！';
+    setMsg('跟著示範做做看，你可以的！');
   }
+}
+
+function drawHandSkeleton(handLm, w, h){
+  camCtx.save();
+  camCtx.strokeStyle = 'rgba(253,246,232,0.85)';
+  camCtx.lineWidth = 3;
+  camCtx.lineCap = 'round';
+  for(const [a,b] of HAND_CONNECTIONS){
+    const pa = handLm[a], pb = handLm[b];
+    camCtx.beginPath();
+    camCtx.moveTo(pa.x*w, pa.y*h);
+    camCtx.lineTo(pb.x*w, pb.y*h);
+    camCtx.stroke();
+  }
+  handLm.forEach((pt, i) => {
+    const isTip = [4,8,12,16,20].includes(i);
+    camCtx.beginPath();
+    camCtx.arc(pt.x*w, pt.y*h, isTip ? 6 : 4, 0, Math.PI*2);
+    camCtx.fillStyle = isTip ? 'rgba(245,169,63,0.95)' : 'rgba(253,246,232,0.9)';
+    camCtx.fill();
+  });
+  camCtx.restore();
 }
 
 function onMissionSuccess(){
   stopCamera();
   starsEarned.add(currentMission.id);
-  sessionLog.push({ name: currentMission.name, time: new Date() });
+  sessionLog.push({ id: currentMission.id, name: currentMission.name, time: new Date() });
+  saveProgress();
   document.getElementById('success-glyph').textContent = currentMission.animal;
   document.getElementById('success-title').textContent = currentMission.title;
   document.getElementById('success-lead').textContent = currentMission.lead;
