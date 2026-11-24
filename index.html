@@ -303,6 +303,17 @@
     <div class="eyebrow">手影小任務・早療版</div>
     <h1 class="title">跟著<span class="accent">手影</span>學手勢</h1>
     <p class="lead">先看示範，再照著鏡子模仿。一次只練一個手勢，做到就有星星鼓勵！</p>
+
+    <!-- 新增：兒童編號輸入框 -->
+    <div style="margin-top: 22px; text-align: center;">
+      <input 
+        type="text" 
+        id="child-id-input" 
+        placeholder="請輸入兒童編號 (如 C01)" 
+        style="background: rgba(255,255,255,0.08); border: 1.5px solid rgba(245,169,63,0.6); color: var(--cream); font-family: 'Fredoka', 'Noto Sans TC', sans-serif; font-size: 16px; font-weight: 700; padding: 12px 20px; border-radius: 999px; text-align: center; width: 230px; outline: none; text-transform: uppercase;"
+      />
+    </div>
+
     <button class="btn-primary" id="btn-enter">開始</button>
   </section>
 
@@ -429,7 +440,7 @@
 
 <script type="module">
 import { GestureRecognizer, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
-import { resetRecordState, markHintTriggered, onGestureSuccess } from "./script.js";
+import { resetRecordState, markHintTriggered, onGestureSuccess, setCurrentUserId } from "./script.js";
 
 /* ---------------- PWA: register service worker ---------------- */
 if ('serviceWorker' in navigator) {
@@ -754,7 +765,22 @@ function showScreen(id){
   else setDemoTarget(null, null);
 }
 
-document.getElementById('btn-enter').onclick = () => { goToDemo(currentIndex); };
+const childIdInput = document.getElementById('child-id-input');
+const savedChildId = localStorage.getItem('current_child_id');
+if (savedChildId && childIdInput) {
+  childIdInput.value = savedChildId;
+}
+
+document.getElementById('btn-enter').onclick = () => {
+  const val = childIdInput.value.trim().toUpperCase();
+  if (!val) {
+    alert('請先輸入兒童編號再開始練習喔！');
+    childIdInput.focus();
+    return;
+  }
+  setCurrentUserId(val); // 同步更新 script.js 裡的變數與 localStorage
+  goToDemo(currentIndex);
+};
 function openParentPanel(){ renderParentPanel(); showScreen('screen-parent'); }
 
 // 家長入口：長按 1.2 秒才會開啟，避免幼兒亂點誤入

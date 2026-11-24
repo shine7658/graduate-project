@@ -1,6 +1,6 @@
 import { savePracticeRecord } from "./firebase-db.js"; //[cite: 3, 6]
 
-let currentUserId = "KID_001"; // 後續可改為從畫面輸入框取得[cite: 6]
+let currentUserId = localStorage.getItem("current_child_id") || "KID_001";
 let levelStartTime = 0;
 let hintTriggered = false;
 let hasRecorded = false;
