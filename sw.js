@@ -2,17 +2,20 @@
 //  APP_CACHE      → 自己的程式檔（index.html、圖示…），改版時換版本號即可清掉舊的
 //  RUNTIME_CACHE  → MediaPipe 的 wasm / 模型檔 / 字型這些「很大又很少變」的外部檔案，
 //                   跨版本保留，避免每次更新 App 都要重新下載十幾 MB
-const APP_CACHE = 'shadow-hand-app-v7';
-const RUNTIME_CACHE = 'shadow-hand-runtime-v1';
+const APP_CACHE = 'shadow-hand-app-v8'; // 改版號強制更新快取[cite: 7]
+const RUNTIME_CACHE = 'shadow-hand-runtime-v1'; //[cite: 7]
 
 const CORE_ASSETS = [
   './',
   './index.html',
+  './script.js',
+  './firebase-db.js',
+  './firebase-config.js',
   './manifest.json',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/icon-maskable-512.png'
-];
+]; //[cite: 7]
 
 // 只快取這幾個已知的外部網域（MediaPipe 程式、模型、Google Fonts）
 const RUNTIME_HOSTS = [

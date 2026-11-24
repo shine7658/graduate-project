@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>智能手影系統 - 管理者療程進度</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #1e1e24; color: #fff; }
+        .controls { margin-bottom: 20px; }
+        input, button { padding: 8px 12px; font-size: 16px; border-radius: 6px; border: none; }
+        button { background: #ff9800; color: white; cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: #2b2b36; }
+        th, td { padding: 12px; border: 1px solid #444; text-align: left; }
+        th { background: #3a3a4a; color: #ffcc80; }
+    </style>
+</head>
+<body>
+    <h1>早療手影系統 - 療程進度管理</h1>
+    <div class="controls">
+        <input type="text" id="userFilter" placeholder="輸入兒童編號 (留空查全部)">
+        <button id="loadBtn">查詢進度</button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>完成時間</th>
+                <th>兒童編號</th>
+                <th>完成手勢</th>
+                <th>花費秒數</th>
+                <th>觸發逾時提示</th>
+            </tr>
+        </thead>
+        <tbody id="recordTableBody">
+            <tr><td colspan="5">請點擊「查詢進度」載入資料</td></tr>
+        </tbody>
+    </table>
+
+    <script type="module">
+        import { fetchPracticeRecords } from "./firebase-db.js";
+
+        const loadBtn = document.getElementById("loadBtn");
+        const userFilter = document.getElementById("userFilter");
+        const tbody = document.getElementById("recordTableBody");
+
+        async function loadData() {
+            tbody.innerHTML = "<tr><td colspan='5'>載入中...</td></tr>";
+            try {
+                const records = await fetchPracticeRecords(userFilter.value);
+                if (records.length === 0) {
+                    tbody.innerHTML = "<tr><td colspan='5'>目前沒有符合的練習紀錄</td></tr>";
+                    return;
+                }
+
+                tbody.innerHTML = records.map(r => {
+                    const timeStr = r.completed_at ? r.completed_at.toDate().toLocaleString("zh-TW") : "處理中";
+                    return `
+                        <tr>
+                            <td>${timeStr}</td>
+                            <td>${r.user_id}</td>
+                            <td>${r.gesture_name}</td>
+                            <td>${r.duration_sec} 秒</td>
+                            <td>${r.hint_triggered ? "是 (>10秒)" : "否"}</td>
+                        </tr>
+                    `;
+                }).join("");
+            } catch (err) {
+                console.error(err);
+                tbody.innerHTML = "<tr><td colspan='5'>讀取失敗，請開啟 F12 檢查 Console（若篩選特定編號，可能需要依提示建立 Firestore 複合索引）。</td></tr>";
+            }
+        }
+
+        loadBtn.addEventListener("click", loadData);
+        window.onload = loadData;
+    </script>
+</body>
+</html>
