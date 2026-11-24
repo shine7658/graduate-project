@@ -2,75 +2,346 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>智能手影系統 - 管理者療程進度</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>手影小任務 - 治療師療程進度管理</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <!-- 引入 Chart.js 繪製統計圖表 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
     <style>
-        body { font-family: sans-serif; padding: 20px; background: #1e1e24; color: #fff; }
-        .controls { margin-bottom: 20px; }
-        input, button { padding: 8px 12px; font-size: 16px; border-radius: 6px; border: none; }
-        button { background: #ff9800; color: white; cursor: pointer; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: #2b2b36; }
-        th, td { padding: 12px; border: 1px solid #444; text-align: left; }
-        th { background: #3a3a4a; color: #ffcc80; }
+        :root {
+            --navy-deep: #0D1424;
+            --navy-card: #182140;
+            --navy-row: #1E2A4D;
+            --gold-glow: #F5A93F;
+            --gold-soft: #FFD98E;
+            --cream: #FDF6E8;
+            --mint: #6FD9B8;
+            --coral: #FF7A66;
+            --dim: #8996BE;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: var(--navy-deep);
+            color: var(--cream);
+            padding: 28px 20px 60px;
+            line-height: 1.6;
+        }
+        .container { max-width: 1040px; margin: 0 auto; }
+        header {
+            display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
+            gap: 16px; margin-bottom: 24px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 18px;
+        }
+        .eyebrow { font-family: 'Fredoka', sans-serif; font-size: 12px; color: var(--gold-soft); letter-spacing: 0.14em; }
+        h1 { font-size: 24px; font-weight: 900; margin-top: 2px; }
+
+        .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+        input {
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(245,169,63,0.45);
+            color: var(--cream); padding: 10px 16px; border-radius: 999px; font-size: 14px;
+            outline: none; width: 220px; text-transform: uppercase;
+        }
+        input::placeholder { color: var(--dim); text-transform: none; }
+        button {
+            font-family: 'Noto Sans TC', sans-serif; font-weight: 700; font-size: 14px;
+            padding: 10px 20px; border-radius: 999px; border: none; cursor: pointer;
+            transition: transform 0.15s ease, opacity 0.15s ease;
+        }
+        button:hover { transform: translateY(-1px); opacity: 0.92; }
+        .btn-query { background: linear-gradient(135deg, var(--gold-glow), #E88A2A); color: #221200; }
+        .btn-export { background: rgba(111, 217, 184, 0.18); color: var(--mint); border: 1px solid rgba(111, 217, 184, 0.4); }
+        .btn-export:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+        /* 數據總覽卡片 */
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 14px; margin-bottom: 24px;
+        }
+        .stat-card {
+            background: var(--navy-card); border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 18px; padding: 18px 20px;
+        }
+        .stat-label { font-size: 12px; color: var(--dim); margin-bottom: 6px; }
+        .stat-value { font-family: 'Fredoka', 'Noto Sans TC', sans-serif; font-size: 28px; font-weight: 700; color: var(--gold-soft); }
+        .stat-value.mint { color: var(--mint); }
+        .stat-sub { font-size: 11px; color: var(--dim); margin-top: 4px; }
+
+        /* 圖表區塊 */
+        .charts-grid {
+            display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 24px;
+        }
+        @media (max-width: 768px) { .charts-grid { grid-template-columns: 1fr; } }
+        .chart-card {
+            background: var(--navy-card); border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 18px; padding: 18px 20px;
+        }
+        .chart-title { font-size: 14px; font-weight: 700; color: var(--gold-soft); margin-bottom: 12px; }
+        .chart-box { position: relative; height: 220px; width: 100%; }
+
+        /* 表格區塊 */
+        .table-wrap {
+            background: var(--navy-card); border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 18px; overflow-x: auto;
+        }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        th, td { padding: 14px 16px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 14px; }
+        th { background: rgba(255,255,255,0.03); color: var(--gold-soft); font-size: 13px; font-weight: 700; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: rgba(255,255,255,0.02); }
+
+        .badge {
+            display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700;
+        }
+        .badge-ok { background: rgba(111, 217, 184, 0.16); color: var(--mint); }
+        .badge-hint { background: rgba(245, 169, 63, 0.18); color: var(--gold-soft); }
+        .badge-skip { background: rgba(255, 122, 102, 0.18); color: var(--coral); }
+        .id-tag { font-family: 'Fredoka', sans-serif; font-weight: 600; color: var(--cream); background: rgba(255,255,255,0.08); padding: 2px 8px; border-radius: 6px; }
     </style>
 </head>
 <body>
-    <h1>早療手影系統 - 療程進度管理</h1>
-    <div class="controls">
-        <input type="text" id="userFilter" placeholder="輸入兒童編號 (留空查全部)">
-        <button id="loadBtn">查詢進度</button>
+<div class="container">
+    <header>
+        <div>
+            <div class="eyebrow">THERAPIST DASHBOARD</div>
+            <h1>早療手影系統｜療程進度管理</h1>
+        </div>
+        <div class="controls">
+            <input type="text" id="userFilter" placeholder="兒童編號 (如 C01，留空查全部)">
+            <button class="btn-query" id="loadBtn">查詢進度</button>
+            <button class="btn-export" id="exportBtn" disabled>匯出 CSV 報表 ⬇</button>
+        </div>
+    </header>
+
+    <!-- 數據總覽卡片 -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label">總練習筆數</div>
+            <div class="stat-value" id="stat-total">-</div>
+            <div class="stat-sub" id="stat-scope">全部個案累計</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">獨立完成率（無逾時提示）</div>
+            <div class="stat-value mint" id="stat-indep">-</div>
+            <div class="stat-sub">10 秒內自主做出手勢比例</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">平均完成反應時間</div>
+            <div class="stat-value" id="stat-avg-sec">-</div>
+            <div class="stat-sub">不含跳過之有效過關平均</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">需協助／跳過次數</div>
+            <div class="stat-value" id="stat-assist">-</div>
+            <div class="stat-sub" id="stat-skip-sub">含觸發提示與跳過關卡</div>
+        </div>
     </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>完成時間</th>
-                <th>兒童編號</th>
-                <th>完成手勢</th>
-                <th>花費秒數</th>
-                <th>觸發逾時提示</th>
-            </tr>
-        </thead>
-        <tbody id="recordTableBody">
-            <tr><td colspan="5">請點擊「查詢進度」載入資料</td></tr>
-        </tbody>
-    </table>
+    <!-- 圖表區 -->
+    <div class="charts-grid">
+        <div class="chart-card">
+            <div class="chart-title">各手勢平均反應秒數（秒數越短代表越熟練）</div>
+            <div class="chart-box"><canvas id="gestureBarChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">完成方式分佈</div>
+            <div class="chart-box"><canvas id="assistPieChart"></canvas></div>
+        </div>
+    </div>
 
-    <script type="module">
-        import { fetchPracticeRecords } from "./firebase-db.js";
+    <!-- 詳細紀錄表 -->
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>完成時間</th>
+                    <th>兒童編號</th>
+                    <th>練習手勢</th>
+                    <th>花費秒數</th>
+                    <th>完成狀態</th>
+                </tr>
+            </thead>
+            <tbody id="recordTableBody">
+                <tr><td colspan="5" style="text-align:center; color:var(--dim);">資料載入中…</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
 
-        const loadBtn = document.getElementById("loadBtn");
-        const userFilter = document.getElementById("userFilter");
-        const tbody = document.getElementById("recordTableBody");
+<script type="module">
+    import { fetchPracticeRecords } from "./firebase-db.js";
 
-        async function loadData() {
-            tbody.innerHTML = "<tr><td colspan='5'>載入中...</td></tr>";
-            try {
-                const records = await fetchPracticeRecords(userFilter.value);
-                if (records.length === 0) {
-                    tbody.innerHTML = "<tr><td colspan='5'>目前沒有符合的練習紀錄</td></tr>";
-                    return;
-                }
+    const loadBtn = document.getElementById("loadBtn");
+    const exportBtn = document.getElementById("exportBtn");
+    const userFilter = document.getElementById("userFilter");
+    const tbody = document.getElementById("recordTableBody");
 
-                tbody.innerHTML = records.map(r => {
-                    const timeStr = r.completed_at ? r.completed_at.toDate().toLocaleString("zh-TW") : "處理中";
-                    return `
-                        <tr>
-                            <td>${timeStr}</td>
-                            <td>${r.user_id}</td>
-                            <td>${r.gesture_name}</td>
-                            <td>${r.duration_sec} 秒</td>
-                            <td>${r.hint_triggered ? "是 (>10秒)" : "否"}</td>
-                        </tr>
-                    `;
-                }).join("");
-            } catch (err) {
-                console.error(err);
-                tbody.innerHTML = "<tr><td colspan='5'>讀取失敗，請開啟 F12 檢查 Console（若篩選特定編號，可能需要依提示建立 Firestore 複合索引）。</td></tr>";
-            }
+    let currentRecords = [];
+    let barChartInstance = null;
+    let pieChartInstance = null;
+
+    const GESTURE_ORDER = ['招手掰掰', '指指看', '大拇哥讚', '小手握拳', '勝利手勢'];
+
+    function updateSummaryAndCharts(records, filterId) {
+        const total = records.length;
+        const skippedList = records.filter(r => r.skipped === true);
+        const validList = records.filter(r => !r.skipped);
+        const indepList = validList.filter(r => !r.hint_triggered);
+        const hintList = validList.filter(r => r.hint_triggered);
+
+        document.getElementById("stat-total").textContent = `${total} 次`;
+        document.getElementById("stat-scope").textContent = filterId ? `篩選個案：${filterId}` : "全部個案累計";
+
+        if (validList.length > 0) {
+            const indepRate = Math.round((indepList.length / validList.length) * 100);
+            const avgSec = (validList.reduce((sum, r) => sum + (Number(r.duration_sec) || 0), 0) / validList.length).toFixed(1);
+            document.getElementById("stat-indep").textContent = `${indepRate}%`;
+            document.getElementById("stat-avg-sec").textContent = `${avgSec} 秒`;
+        } else {
+            document.getElementById("stat-indep").textContent = "-";
+            document.getElementById("stat-avg-sec").textContent = "-";
         }
 
-        loadBtn.addEventListener("click", loadData);
-        window.onload = loadData;
-    </script>
+        document.getElementById("stat-assist").textContent = `${hintList.length + skippedList.length} 次`;
+        document.getElementById("stat-skip-sub").textContent = `提示 ${hintList.length} 次 ／ 跳過 ${skippedList.length} 次`;
+
+        // 計算五個手勢各自的平均秒數
+        const avgPerGesture = GESTURE_ORDER.map(name => {
+            const items = validList.filter(r => r.gesture_name === name);
+            if (items.length === 0) return 0;
+            const sum = items.reduce((s, r) => s + (Number(r.duration_sec) || 0), 0);
+            return Number((sum / items.length).toFixed(1));
+        });
+
+        // 繪製長條圖
+        const barCtx = document.getElementById("gestureBarChart").getContext("2d");
+        if (barChartInstance) barChartInstance.destroy();
+        barChartInstance = new Chart(barCtx, {
+            type: 'bar',
+            data: {
+                labels: GESTURE_ORDER,
+                datasets: [{
+                    label: '平均花費秒數 (秒)',
+                    data: avgPerGesture,
+                    backgroundColor: 'rgba(245, 169, 63, 0.75)',
+                    borderColor: '#F5A93F',
+                    borderWidth: 1,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.06)' }, ticks: { color: '#8996BE' } },
+                    x: { grid: { display: false }, ticks: { color: '#FDF6E8' } }
+                }
+            }
+        });
+
+        // 繪製圓餅圖
+        const pieCtx = document.getElementById("assistPieChart").getContext("2d");
+        if (pieChartInstance) pieChartInstance.destroy();
+        pieChartInstance = new Chart(pieCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['獨立完成', '提示後完成', '跳過關卡'],
+                datasets: [{
+                    data: [indepList.length, hintList.length, skippedList.length],
+                    backgroundColor: ['#6FD9B8', '#F5A93F', '#FF7A66'],
+                    borderColor: '#182140',
+                    borderWidth: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { color: '#FDF6E8', padding: 12, font: { size: 12 } } }
+                }
+            }
+        });
+    }
+
+    async function loadData() {
+        const filterVal = userFilter.value.trim().toUpperCase();
+        userFilter.value = filterVal;
+        tbody.innerHTML = "<tr><td colspan='5' style='text-align:center; color:var(--dim);'>正在從雲端讀取資料…</td></tr>";
+        exportBtn.disabled = true;
+
+        try {
+            const records = await fetchPracticeRecords(filterVal);
+            currentRecords = records;
+            updateSummaryAndCharts(records, filterVal);
+
+            if (records.length === 0) {
+                tbody.innerHTML = "<tr><td colspan='5' style='text-align:center; color:var(--dim);'>目前沒有符合的練習紀錄</td></tr>";
+                return;
+            }
+
+            exportBtn.disabled = false;
+            tbody.innerHTML = records.map(r => {
+                const timeStr = r.completed_at ? r.completed_at.toDate().toLocaleString("zh-TW") : "同步中";
+                let badgeHtml = `<span class="badge badge-ok">獨立完成</span>`;
+                if (r.skipped) {
+                    badgeHtml = `<span class="badge badge-skip">跳過關卡</span>`;
+                } else if (r.hint_triggered) {
+                    badgeHtml = `<span class="badge badge-hint">觸發提示 (>10s)</span>`;
+                }
+
+                return `
+                    <tr>
+                        <td>${timeStr}</td>
+                        <td><span class="id-tag">${r.user_id}</span></td>
+                        <td><strong>${r.gesture_name}</strong></td>
+                        <td>${r.duration_sec} 秒</td>
+                        <td>${badgeHtml}</td>
+                    </tr>
+                `;
+            }).join("");
+        } catch (err) {
+            console.error(err);
+            tbody.innerHTML = `<tr><td colspan='5' style='color:var(--coral);'>
+                讀取失敗，請按 F12 查看 Console 錯誤訊息。<br>
+                <small style="color:var(--dim);">（提示：若首次輸入特定兒童編號查詢，請點擊 Console 中的 Firebase 網址建立複合索引即可）</small>
+            </td></tr>`;
+        }
+    }
+
+    // 匯出 CSV 功能
+    exportBtn.addEventListener("click", () => {
+        if (currentRecords.length === 0) return;
+        const headers = ["完成時間", "兒童編號", "手勢編號", "手勢名稱", "花費秒數", "是否觸發提示", "是否跳過"];
+        const rows = currentRecords.map(r => {
+            const timeStr = r.completed_at ? r.completed_at.toDate().toLocaleString("zh-TW") : "";
+            return [
+                `"${timeStr}"`,
+                `"${r.user_id}"`,
+                r.gesture_id,
+                `"${r.gesture_name}"`,
+                r.duration_sec,
+                r.hint_triggered ? "是" : "否",
+                r.skipped ? "是" : "否"
+            ].join(",");
+        });
+
+        // 加上 \uFEFF (UTF-8 BOM) 確保 Excel 開啟中文不亂碼
+        const csvContent = "\uFEFF" + [headers.join(","), ...rows].join("\n");
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        const tag = userFilter.value.trim() || "ALL";
+        const dateTag = new Date().toISOString().slice(0, 10);
+        a.href = url;
+        a.download = `手影療程紀錄_${tag}_${dateTag}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+
+    loadBtn.addEventListener("click", loadData);
+    userFilter.addEventListener("keydown", (e) => { if (e.key === "Enter") loadData(); });
+    window.addEventListener("load", loadData);
+</script>
 </body>
 </html>

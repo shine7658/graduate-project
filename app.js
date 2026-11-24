@@ -1,5 +1,5 @@
 import { GestureRecognizer, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
-import { resetRecordState, markHintTriggered, onGestureSuccess, setCurrentUserId } from "./script.js";
+import { resetRecordState, markHintTriggered, onGestureSuccess, onGestureSkipped, setCurrentUserId } from "./script.js";
 
 /* ---------------- PWA: register service worker ---------------- */
 if ('serviceWorker' in navigator) {
@@ -339,8 +339,9 @@ document.getElementById('btn-clear-id').onclick = () => {
   childIdInput.focus();
 };
 
-// 第3階段提示時的「先跳過這題」功能（不計入星星，直接進入下一題示範）
+// 跳過按鈕事件改為：
 document.getElementById('hint-skip-mission').onclick = () => {
+  onGestureSkipped(currentMission.id, currentMission.name);
   stopCamera();
   const next = currentIndex + 1;
   if(next >= MISSIONS.length){

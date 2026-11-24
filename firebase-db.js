@@ -2,13 +2,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/fireba
 import { 
     getFirestore, collection, addDoc, getDocs, query, where, orderBy, serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { firebaseConfig } from "./firebase-config.js"; // 從外部讀取
+import { firebaseConfig } from "./firebase-config.js";
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// 1. 寫入一筆練習紀錄（過關時呼叫）
-export async function savePracticeRecord(userId, gestureId, gestureName, durationSec, hintTriggered) {
+// 1. 寫入一筆練習紀錄（過關或跳過時呼叫）
+export async function savePracticeRecord(userId, gestureId, gestureName, durationSec, hintTriggered, skipped = false) {
     try {
         const docRef = await addDoc(collection(db, "practice_records"), {
             user_id: userId,
@@ -16,6 +16,7 @@ export async function savePracticeRecord(userId, gestureId, gestureName, duratio
             gesture_name: gestureName,
             duration_sec: Number(durationSec.toFixed(1)),
             hint_triggered: hintTriggered,
+            skipped: skipped,
             completed_at: serverTimestamp()
         });
         console.log("紀錄寫入成功，ID:", docRef.id);
@@ -32,7 +33,7 @@ export async function fetchPracticeRecords(filterUserId = "") {
     let q;
 
     if (filterUserId.trim() !== "") {
-        q = query(recordsRef, where("user_id", "==", filterUserId.trim()), orderBy("completed_at", "desc"));
+        q = query(recordsRef, where("user_id", "==", filterUserId.trim().toUpperCase()), orderBy("completed_at", "desc"));
     } else {
         q = query(recordsRef, orderBy("completed_at", "desc"));
     }

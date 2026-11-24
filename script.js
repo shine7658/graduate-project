@@ -36,3 +36,12 @@ export async function onGestureSuccess(gestureId, gestureName) {
         hasRecorded = false; // 若網路失敗允許重試
     }
 }
+
+// 新增：家長按下「先跳過這題」時記錄
+export async function onGestureSkipped(gestureId, gestureName) {
+    if (hasRecorded) return;
+    hasRecorded = true;
+
+    const durationSec = (Date.now() - levelStartTime) / 1000;
+    await savePracticeRecord(currentUserId, gestureId, gestureName, durationSec, true, true);
+}
