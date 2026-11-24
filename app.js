@@ -693,16 +693,7 @@ function drawBackdrop(){
   camCtx.fillStyle = backdropGradient;
   camCtx.fillRect(0,0,w,h);
 
-  // 1. 繪製半透明「目標手影輪廓」在圓圈中央（左右鏡像對齊鏡頭畫面）
-  if(currentMission && HAND_POSES[currentMission.demo.pose]){
-    const targetLm = handLandmarks(HAND_POSES[currentMission.demo.pose]);
-    camCtx.save();
-    camCtx.globalAlpha = 0.22;
-    drawHandFigure(camCtx, targetLm, { ox: cx, oy: cy + r*0.72, scale: r*0.65, rot: 0, mirror: true }, r*1.8);
-    camCtx.restore();
-  }
-
-  // 2. 根據辨識信心度動態調整外圍光環粗細與亮度
+  // 根據辨識信心度動態調整外圍光環粗細與亮度
   const progressRatio = Math.min(1, currentMatchScore / SCORE_THRESHOLD);
   const isClose = progressRatio > 0.5;
   camCtx.strokeStyle = progressRatio >= 1 
