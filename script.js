@@ -5,10 +5,11 @@ let levelStartTime = 0;
 let hintTriggered = false;
 let hasRecorded = false;
 
-// 設定兒童編號（可選）
+// 設定兒童編號
 export function setCurrentUserId(id) {
     if (id && id.trim() !== "") {
-        currentUserId = id.trim();
+        currentUserId = id.trim().toUpperCase();
+        localStorage.setItem("current_child_id", currentUserId);
     }
 }
 
